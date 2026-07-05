@@ -1,65 +1,395 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  Trash2,
+  Calendar,
+  AlertCircle,
+  PiggyBank,
+  RefreshCw,
+} from "lucide-react";
+import { getDashboardData, addTransaction, deleteTransaction } from "./actions";
+import CategoryIcon from "@/components/CategoryIcon";
+import AnalyticsChart from "@/components/AnalyticsChart";
+import TransactionModal from "@/components/TransactionModal";
+
+// Helper to format Date string (YYYY-MM-DD) into Thai Readable Dates
+function formatThaiDate(dateStr, view) {
+  if (!dateStr) return "";
+
+  const monthNames = [
+    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+  ];
+  const shortMonthNames = [
+    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+  ];
+
+  if (view === "daily") {
+    const [year, month, day] = dateStr.split("-");
+    const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    // Thai year is Christian year + 543
+    return `${d.getDate()} ${shortMonthNames[d.getMonth()]} ${d.getFullYear() + 543}`;
+  } else if (view === "monthly") {
+    const [year, month] = dateStr.split("-");
+    return `${monthNames[parseInt(month) - 1]} ${parseInt(year) + 543}`;
+  } else if (view === "yearly") {
+    return `ปี พ.ศ. ${parseInt(dateStr) + 543}`;
+  }
+  return dateStr;
+}
 
 export default function Home() {
+  const [view, setView] = useState("monthly"); // 'daily' | 'monthly' | 'yearly'
+  const [selectedDate, setSelectedDate] = useState("");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" }); // { text, type: 'success'|'error' }
+
+  // Set default dates on mount
+  useEffect(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    if (view === "daily") {
+      setSelectedDate(`${year}-${month}-${day}`);
+    } else if (view === "monthly") {
+      setSelectedDate(`${year}-${month}`);
+    } else if (view === "yearly") {
+      setSelectedDate(String(year));
+    }
+  }, [view]);
+
+  // Fetch data
+  const fetchData = async () => {
+    if (!selectedDate) return;
+    setLoading(true);
+    try {
+      const res = await getDashboardData(view, selectedDate);
+      if (res.success) {
+        setData(res);
+      } else {
+        showFeedback("ดึงข้อมูลไม่สำเร็จ: " + res.error, "error");
+      }
+    } catch (err) {
+      showFeedback("เกิดข้อผิดพลาดในการเชื่อมต่อ", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [view, selectedDate]);
+
+  // Show status feedback banner
+  const showFeedback = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => {
+      setMessage({ text: "", type: "" });
+    }, 4000);
+  };
+
+  // Date Shift Handler
+  const handleDateShift = (amount) => {
+    if (!selectedDate) return;
+
+    if (view === "daily") {
+      const parts = selectedDate.split("-");
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      d.setDate(d.getDate() + amount);
+      const newYear = d.getFullYear();
+      const newMonth = String(d.getMonth() + 1).padStart(2, "0");
+      const newDay = String(d.getDate()).padStart(2, "0");
+      setSelectedDate(`${newYear}-${newMonth}-${newDay}`);
+    } else if (view === "monthly") {
+      const parts = selectedDate.split("-");
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1 + amount, 1);
+      const newYear = d.getFullYear();
+      const newMonth = String(d.getMonth() + 1).padStart(2, "0");
+      setSelectedDate(`${newYear}-${newMonth}`);
+    } else if (view === "yearly") {
+      const currentYear = parseInt(selectedDate);
+      setSelectedDate(String(currentYear + amount));
+    }
+  };
+
+  // Save transaction Server Action trigger
+  const handleSaveTransaction = async (txData) => {
+    const res = await addTransaction(txData);
+    if (res.success) {
+      showFeedback("บันทึกรายการสำเร็จแล้ว!");
+      fetchData();
+      return true;
+    } else {
+      showFeedback("บันทึกไม่สำเร็จ: " + res.error, "error");
+      return false;
+    }
+  };
+
+  // Delete transaction action
+  const handleDeleteTransaction = async (id) => {
+    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?")) {
+      const res = await deleteTransaction(id);
+      if (res.success) {
+        showFeedback("ลบรายการเสร็จสิ้น");
+        fetchData();
+      } else {
+        showFeedback("ลบรายการไม่สำเร็จ: " + res.error, "error");
+      }
+    }
+  };
+
+  const summary = data?.summary || { totalIncome: 0, totalExpense: 0, balance: 0 };
+  const transactions = data?.transactions || [];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="w-full min-h-screen bg-zinc-50 dark:bg-black text-zinc-800 dark:text-zinc-100 flex flex-col font-sans">
+      {/* App Shell Wrapper (max-w-md creates clean mobile look on desktop) */}
+      <div className="w-full max-w-md mx-auto min-h-screen flex flex-col bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-900/60 shadow-xl relative pb-28">
+        
+        {/* Top Header */}
+        <header className="px-6 pt-7 pb-4 sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg z-30 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900/40">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/20">
+              <PiggyBank className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-base font-extrabold tracking-tight bg-linear-to-r from-zinc-900 to-zinc-600 dark:from-zinc-50 dark:to-zinc-400 bg-clip-text text-transparent">
+                Money Manager
+              </h1>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+                บันทึกรายรับ-รายจ่าย
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-400 dark:text-zinc-500 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-indigo-500" : ""}`} />
+          </button>
+        </header>
+
+        {/* Feedback Alert Banner */}
+        {message.text && (
+          <div className="absolute top-20 left-4 right-4 z-40 animate-slide-up">
+            <div
+              className={`p-3.5 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-lg backdrop-blur-md ${
+                message.type === "error"
+                  ? "bg-rose-50/90 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30"
+                  : "bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30"
+              }`}
+            >
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{message.text}</span>
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 px-5 py-4 space-y-6">
+          {/* Segmented Controls for Range */}
+          <div className="flex bg-zinc-100 dark:bg-zinc-900/80 p-0.5 rounded-2xl">
+            {["daily", "monthly", "yearly"].map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                  view === v
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs"
+                    : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400"
+                }`}
+              >
+                {v === "daily" ? "รายวัน" : v === "monthly" ? "รายเดือน" : "รายปี"}
+              </button>
+            ))}
+          </div>
+
+          {/* Date Picker Switcher */}
+          <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-900/20 px-4 py-3 rounded-2xl">
+            <button
+              onClick={() => handleDateShift(-1)}
+              className="p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500 dark:text-zinc-400"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4.5 h-4.5 text-indigo-500" />
+              <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                {formatThaiDate(selectedDate, view)}
+              </span>
+            </div>
+
+            <button
+              onClick={() => handleDateShift(1)}
+              className="p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500 dark:text-zinc-400"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Dashboard Summary Cards */}
+          <section className="space-y-4">
+            {/* Total Balance Card */}
+            <div className="bg-linear-to-br from-indigo-600 via-indigo-500 to-indigo-700 text-white rounded-3xl p-6 shadow-xl shadow-indigo-600/15 relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 opacity-15 transform translate-x-3 translate-y-3">
+                <PiggyBank className="w-32 h-32" />
+              </div>
+              <p className="text-xs font-semibold text-indigo-100/90 uppercase tracking-widest mb-1.5">
+                ยอดเงินคงเหลือสุทธิ
+              </p>
+              <h2 className="text-3xl font-black tracking-tight">
+                ฿{summary.balance.toLocaleString()}
+              </h2>
+            </div>
+
+            {/* Income / Expense Cards Row */}
+            <div className="grid grid-cols-2 gap-3.5">
+              {/* Income */}
+              <div className="bg-emerald-50/60 dark:bg-emerald-950/15 border border-emerald-100/40 dark:border-emerald-950/30 rounded-2.5rem p-4 flex flex-col justify-between">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                    รายรับรวม
+                  </span>
+                </div>
+                <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">
+                  ฿{summary.totalIncome.toLocaleString()}
+                </p>
+              </div>
+
+              {/* Expense */}
+              <div className="bg-rose-50/60 dark:bg-rose-950/15 border border-rose-100/40 dark:border-rose-950/30 rounded-2.5rem p-4 flex flex-col justify-between">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-xl bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <TrendingDown className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                    รายจ่ายรวม
+                  </span>
+                </div>
+                <p className="text-lg font-extrabold text-rose-700 dark:text-rose-400">
+                  ฿{summary.totalExpense.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Analytics Chart */}
+          {!loading && data && (
+            <AnalyticsChart
+              chartData={data.chartData}
+              categoryBreakdown={data.categoryBreakdown}
+              view={view}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          )}
+
+          {/* Transactions List */}
+          <section className="space-y-3.5">
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200">
+                ประวัติรายการ
+              </h3>
+              <span className="text-[10.5px] font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-2.5 py-1 rounded-full">
+                {transactions.length} รายการ
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="space-y-2.5">
+                {[1, 2, 3].map((n) => (
+                  <div
+                    key={n}
+                    className="h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 animate-pulse w-full"
+                  ></div>
+                ))}
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-10 bg-zinc-50/50 dark:bg-zinc-900/10 rounded-2.5rem border border-dashed border-zinc-100 dark:border-zinc-900 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">
+                <AlertCircle className="w-8 h-8 opacity-40 mb-2" />
+                <span className="text-xs">ยังไม่มีประวัติรายการบันทึกในช่วงเวลานี้</span>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {transactions.map((tx) => (
+                  <div
+                    key={tx._id}
+                    className="flex items-center justify-between p-3.5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100/70 dark:border-zinc-800/40 hover:border-zinc-200 dark:hover:border-zinc-800 transition-all duration-300 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CategoryIcon name={tx.category} />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                          {tx.category}
+                        </p>
+                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate max-w-[150px]">
+                          {tx.description || `บันทึกรายการสำหรับ ${tx.category}`}
+                        </p>
+                        {view !== "daily" && (
+                          <p className="text-[9px] text-zinc-400 font-medium">
+                            {formatThaiDate(tx.dateStr, "daily")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`text-xs font-black shrink-0 ${
+                          tx.type === "income"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-zinc-700 dark:text-zinc-200"
+                        }`}
+                      >
+                        {tx.type === "income" ? "+" : "-"}฿{tx.amount.toLocaleString()}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteTransaction(tx._id)}
+                        className="p-1.5 rounded-lg text-zinc-300 dark:text-zinc-700 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                        title="ลบรายการ"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </main>
+
+        {/* Sticky Action Button / Footer */}
+        <div className="absolute bottom-6 left-0 right-0 px-6 z-20 flex justify-center">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3.5 px-6 rounded-full font-bold text-sm shadow-xl active:scale-95 transition-all duration-300 hover:bg-zinc-800 dark:hover:bg-zinc-100"
           >
-            Documentation
-          </a>
+            <Plus className="w-5 h-5 shrink-0" />
+            <span>เพิ่มรายการใหม่</span>
+          </button>
         </div>
-      </main>
+
+        {/* Transaction Entry Modal Sheet */}
+        <TransactionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveTransaction}
+        />
+      </div>
     </div>
   );
 }
