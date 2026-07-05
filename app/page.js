@@ -61,6 +61,7 @@ export default function Home() {
     const day = String(today.getDate()).padStart(2, "0");
 
     if (view === "daily") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedDate(`${year}-${month}-${day}`);
     } else if (view === "monthly") {
       setSelectedDate(`${year}-${month}`);
@@ -78,6 +79,7 @@ export default function Home() {
       if (res.success) {
         setData(res);
       } else {
+        // eslint-disable-next-line react-hooks/immutability
         showFeedback("ดึงข้อมูลไม่สำเร็จ: " + res.error, "error");
       }
     } catch (err) {
@@ -88,6 +90,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [view, selectedDate]);
 

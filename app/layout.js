@@ -14,6 +14,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Money Manager | บันทึกรายรับ-รายจ่ายส่วนตัว",
   description: "ระบบบันทึกและจัดการรายรับรายจ่ายในแต่ละวัน แสดงผลสถิติอย่างง่ายและรวดเร็วบนมือถือ",
+  icons: {
+    icon: "/money-manage.svg",
+  },
 };
 
 export default function RootLayout({ children }) {
