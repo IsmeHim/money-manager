@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   ChevronLeft,
@@ -53,25 +53,25 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" }); // { text, type: 'success'|'error' }
 
-  // Set default dates on mount
+  // Set default date (monthly) on mount to avoid SSR hydration mismatches
   useEffect(() => {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedDate(`${year}-${month}`);
+  }, []);
 
-    if (view === "daily") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedDate(`${year}-${month}-${day}`);
-    } else if (view === "monthly") {
-      setSelectedDate(`${year}-${month}`);
-    } else if (view === "yearly") {
-      setSelectedDate(String(year));
-    }
-  }, [view]);
+  // Show status feedback banner
+  const showFeedback = useCallback((text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => {
+      setMessage({ text: "", type: "" });
+    }, 4000);
+  }, []);
 
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!selectedDate) return;
     setLoading(true);
     try {
@@ -79,7 +79,6 @@ export default function Home() {
       if (res.success) {
         setData(res);
       } else {
-        // eslint-disable-next-line react-hooks/immutability
         showFeedback("ดึงข้อมูลไม่สำเร็จ: " + res.error, "error");
       }
     } catch (err) {
@@ -87,19 +86,28 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [view, selectedDate, showFeedback]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
-  }, [view, selectedDate]);
+  }, [fetchData]);
 
-  // Show status feedback banner
-  const showFeedback = (text, type = "success") => {
-    setMessage({ text, type });
-    setTimeout(() => {
-      setMessage({ text: "", type: "" });
-    }, 4000);
+  // View change handler that updates view and date at the same time
+  const handleViewChange = (newView) => {
+    setView(newView);
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    if (newView === "daily") {
+      setSelectedDate(`${year}-${month}-${day}`);
+    } else if (newView === "monthly") {
+      setSelectedDate(`${year}-${month}`);
+    } else if (newView === "yearly") {
+      setSelectedDate(String(year));
+    }
   };
 
   // Date Shift Handler
@@ -207,7 +215,7 @@ export default function Home() {
             {["daily", "monthly", "yearly"].map((v) => (
               <button
                 key={v}
-                onClick={() => setView(v)}
+                onClick={() => handleViewChange(v)}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
                   view === v
                     ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs"
@@ -302,6 +310,17 @@ export default function Home() {
           )}
 
           {/* Transactions List */}
+          {/* Add button placed above the history so it's always easy to reach */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3 px-6 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all duration-300 hover:bg-zinc-800 dark:hover:bg-zinc-100"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>เพิ่มรายการใหม่</span>
+            </button>
+          </div>
+
           <section className="space-y-3.5">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-sm text-zinc-800 dark:text-zinc-200">
@@ -362,7 +381,7 @@ export default function Home() {
                       </span>
                       <button
                         onClick={() => handleDeleteTransaction(tx._id)}
-                        className="p-1.5 rounded-lg text-zinc-300 dark:text-zinc-700 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                        className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
                         title="ลบรายการ"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -388,6 +407,7 @@ export default function Home() {
 
         {/* Transaction Entry Modal Sheet */}
         <TransactionModal
+          key={isModalOpen}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveTransaction}

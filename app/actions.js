@@ -64,15 +64,35 @@ export async function getDashboardData(view, dateStr) {
     const db = client.db();
     const collection = db.collection("transactions");
 
+    // Normalize dateStr to Christian Calendar (AD) if Buddhist Calendar (BE > 2400) is used
+    if (dateStr) {
+      const parts = dateStr.split("-");
+      let year = parseInt(parts[0], 10);
+      if (year > 2400) {
+        year -= 543;
+        parts[0] = String(year);
+        dateStr = parts.join("-");
+      }
+    }
+
     let query = {};
     if (view === "daily") {
       query.dateStr = dateStr; // Exact match: "YYYY-MM-DD"
     } else if (view === "monthly") {
-      // Matches "YYYY-MM-DD" starting with "YYYY-MM"
-      query.dateStr = { $regex: `^${dateStr}` };
+      // Range query: from "YYYY-MM-01" to "YYYY-MM-DD" (days in month)
+      const year = parseInt(dateStr.split("-")[0], 10);
+      const monthIndex = parseInt(dateStr.split("-")[1], 10);
+      const daysInMonth = new Date(year, monthIndex, 0).getDate();
+      query.dateStr = {
+        $gte: `${dateStr}-01`,
+        $lte: `${dateStr}-${String(daysInMonth).padStart(2, "0")}`,
+      };
     } else if (view === "yearly") {
-      // Matches "YYYY-MM-DD" starting with "YYYY"
-      query.dateStr = { $regex: `^${dateStr}` };
+      // Range query: from "YYYY-01-01" to "YYYY-12-31"
+      query.dateStr = {
+        $gte: `${dateStr}-01-01`,
+        $lte: `${dateStr}-12-31`,
+      };
     }
 
     const rawTransactions = await collection.find(query).sort({ dateStr: -1, createdAt: -1 }).toArray();

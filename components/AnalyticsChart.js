@@ -9,7 +9,7 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
   // --- Bar Chart Logic ---
   // Find maximum value to scale the chart
   const maxVal = Math.max(
-    ...chartData.map((d) => Math.max(d.income || 0, d.expense || 0)),
+    ...chartData.map((d) => Math.max(d?.income || 0, d?.expense || 0)),
     100 // Prevent division by zero
   );
 
@@ -38,7 +38,6 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
     "#84cc16", // lime
   ];
 
-  let accumulatedPercentage = 0;
 
   return (
     <div className="space-y-6">
@@ -70,16 +69,16 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
             }}
           >
             {chartData.map((d, index) => {
-              const incomeHeight = `${((d.income || 0) / maxVal) * 120}px`;
-              const expenseHeight = `${((d.expense || 0) / maxVal) * 120}px`;
+              const incomeHeight = `${((d?.income || 0) / maxVal) * 120}px`;
+              const expenseHeight = `${((d?.expense || 0) / maxVal) * 120}px`;
 
               return (
                 <div key={index} className="flex-1 flex flex-col items-center gap-2 group">
                   {/* Hover tooltips */}
                   <div className="relative w-full flex justify-center">
                     <div className="absolute bottom-0 mb-1 hidden group-hover:flex flex-col items-center bg-zinc-950 text-white text-[10px] py-1 px-2 rounded-lg shadow-lg z-10 whitespace-nowrap">
-                      {d.income > 0 && <div className="text-emerald-400">รับ: ฿{d.income.toLocaleString()}</div>}
-                      {d.expense > 0 && <div className="text-rose-400">จ่าย: ฿{d.expense.toLocaleString()}</div>}
+                      {d?.income > 0 && <div className="text-emerald-400">รับ: ฿{d.income.toLocaleString()}</div>}
+                      {d?.expense > 0 && <div className="text-rose-400">จ่าย: ฿{d.expense.toLocaleString()}</div>}
                     </div>
                   </div>
 
@@ -162,8 +161,10 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
                 {filteredBreakdown.map((item, idx) => {
                   const slicePercentage = (item.amount / totalAmount) * 100;
                   const strokeLength = (slicePercentage / 100) * circumference;
-                  const strokeOffset = circumference - (accumulatedPercentage / 100) * circumference;
-                  accumulatedPercentage += slicePercentage;
+                  const previousAccumulated = filteredBreakdown
+                    .slice(0, idx)
+                    .reduce((sum, prevItem) => sum + (prevItem.amount / totalAmount) * 100, 0);
+                  const strokeOffset = circumference - (previousAccumulated / 100) * circumference;
                   const color = donutColors[idx % donutColors.length];
 
                   return (

@@ -26,35 +26,24 @@ const INCOME_CATEGORIES = [
 export default function TransactionModal({ isOpen, onClose, onSave }) {
   const [type, setType] = useState("expense"); // 'expense' | 'income'
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [dateStr, setDateStr] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Initialize fields on open
+  // Initialize dateStr on client mount to avoid SSR mismatches
   useEffect(() => {
-    if (isOpen) {
-      setType("expense");
-      setAmount("");
-      setCategory(EXPENSE_CATEGORIES[0]);
-      setDescription("");
-      // Set default date to local YYYY-MM-DD
-      const today = new Date();
-      const localDate = today.toLocaleDateString("sv-SE"); // sv-SE format is YYYY-MM-DD
-      setDateStr(localDate);
-      setError("");
-    }
-  }, [isOpen]);
+    const today = new Date();
+    const localDate = today.toLocaleDateString("sv-SE"); // sv-SE format is YYYY-MM-DD
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDateStr(localDate);
+  }, []);
 
-  // Adjust default category when type changes
-  useEffect(() => {
-    if (type === "expense") {
-      setCategory(EXPENSE_CATEGORIES[0]);
-    } else {
-      setCategory(INCOME_CATEGORIES[0]);
-    }
-  }, [type]);
+  const handleTypeChange = (newType) => {
+    setType(newType);
+    setCategory(newType === "expense" ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]);
+  };
 
   if (!isOpen) return null;
 
@@ -132,7 +121,7 @@ export default function TransactionModal({ isOpen, onClose, onSave }) {
           <div className="flex bg-zinc-100 dark:bg-zinc-800/60 p-1 rounded-2xl">
             <button
               type="button"
-              onClick={() => setType("expense")}
+              onClick={() => handleTypeChange("expense")}
               className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
                 type === "expense"
                   ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
@@ -143,7 +132,7 @@ export default function TransactionModal({ isOpen, onClose, onSave }) {
             </button>
             <button
               type="button"
-              onClick={() => setType("income")}
+              onClick={() => handleTypeChange("income")}
               className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
                 type === "income"
                   ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
