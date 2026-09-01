@@ -242,12 +242,23 @@ export async function askFinancialBot(userMessage) {
     let query = {};
     if (parsed.searchKeyword) {
       const escapedKw = parsed.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const keywordFilter = {
-        $or: [
-          { description: { $regex: escapedKw, $options: "i" } },
-          { category: { $regex: escapedKw, $options: "i" } },
-        ],
-      };
+      const conditions = [
+        { description: { $regex: escapedKw, $options: "i" } },
+        { category: { $regex: escapedKw, $options: "i" } },
+      ];
+
+      // If user asks for generic food like 'ข้าว', also match 'อาหาร' category or 'ข้า'
+      if (
+        parsed.searchKeyword === "ข้าว" ||
+        parsed.searchKeyword === "อาหาร" ||
+        parsed.searchKeyword === "กินข้าว" ||
+        parsed.searchKeyword === "กับข้าว"
+      ) {
+        conditions.push({ category: "อาหาร" });
+        conditions.push({ description: { $regex: "ข้า", $options: "i" } });
+      }
+
+      const keywordFilter = { $or: conditions };
 
       if (parsed.timeFilter && Object.keys(parsed.timeFilter).length > 0) {
         query = {
