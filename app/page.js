@@ -12,11 +12,13 @@ import {
   AlertCircle,
   PiggyBank,
   RefreshCw,
+  ScanLine,
 } from "lucide-react";
 import { getDashboardData, addTransaction, deleteTransaction } from "./actions";
 import CategoryIcon from "@/components/CategoryIcon";
 import AnalyticsChart from "@/components/AnalyticsChart";
 import TransactionModal from "@/components/TransactionModal";
+import SlipScannerModal from "@/components/SlipScannerModal";
 
 // Helper to format Date string (YYYY-MM-DD) into Thai Readable Dates
 function formatThaiDate(dateStr, view) {
@@ -51,6 +53,8 @@ export default function Home() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSlipScannerOpen, setIsSlipScannerOpen] = useState(false);
+  const [modalInitialData, setModalInitialData] = useState(null);
   const [message, setMessage] = useState({ text: "", type: "" }); // { text, type: 'success'|'error' }
 
   // Set default date (monthly) on mount to avoid SSR hydration mismatches
@@ -61,6 +65,18 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedDate(`${year}-${month}`);
   }, []);
+
+  const handleOpenManualModal = () => {
+    setModalInitialData(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSlipScanSuccess = (parsedData) => {
+    setModalInitialData(parsedData);
+    setIsSlipScannerOpen(false);
+    setIsModalOpen(true);
+    showFeedback("อ่านข้อมูลจากสลิปเรียบร้อยแล้ว กรุณาตรวจสอบและเลือกหมวดหมู่");
+  };
 
   // Show status feedback banner
   const showFeedback = useCallback((text, type = "success") => {
@@ -166,7 +182,7 @@ export default function Home() {
   return (
     <div className="w-full min-h-screen bg-zinc-50 dark:bg-black text-zinc-800 dark:text-zinc-100 flex flex-col font-sans">
       {/* App Shell Wrapper (max-w-md creates clean mobile look on desktop) */}
-      <div className="w-full max-w-md mx-auto min-h-screen flex flex-col bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-900/60 shadow-xl relative pb-28">
+      <div className="w-full max-w-md mx-auto min-h-screen flex flex-col bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-900/60 shadow-xl relative pb-10">
         
         {/* Top Header */}
         <header className="px-6 pt-7 pb-4 sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg z-30 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900/40">
@@ -309,15 +325,25 @@ export default function Home() {
             />
           )}
 
-          {/* Transactions List */}
-          {/* Add button placed above the history so it's always easy to reach */}
-          <div className="flex justify-center">
+          {/* Action Buttons: Add Manual & Scan Slip */}
+          <div className="grid grid-cols-2 gap-3.5 pt-1">
+            {/* Scan Slip Button with vibrant glowing gradient */}
             <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3 px-6 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all duration-300 hover:bg-zinc-800 dark:hover:bg-zinc-100"
+              onClick={() => setIsSlipScannerOpen(true)}
+              className="relative group flex items-center justify-center gap-2.5 bg-linear-to-r from-indigo-600 via-indigo-500 to-violet-600 text-white py-3.5 px-5 rounded-full font-extrabold text-sm shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:shadow-2xl active:scale-95 transition-all duration-300 border border-indigo-400/30 overflow-hidden"
             >
-              <Plus className="w-4 h-4 shrink-0" />
-              <span>เพิ่มรายการใหม่</span>
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <ScanLine className="w-4.5 h-4.5 shrink-0 transition-transform group-hover:scale-110" />
+              <span className="tracking-wide">สแกนสลิป</span>
+            </button>
+
+            {/* Add Manual Transaction Button with clean contrast and glow */}
+            <button
+              onClick={handleOpenManualModal}
+              className="relative group flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white py-3.5 px-5 rounded-full font-extrabold text-sm shadow-xl shadow-zinc-900/10 dark:shadow-black/60 border border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 active:scale-95 transition-all duration-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <Plus className="w-4.5 h-4.5 shrink-0 transition-transform group-hover:scale-110" />
+              <span className="tracking-wide">เพิ่มรายการใหม่</span>
             </button>
           </div>
 
@@ -393,22 +419,22 @@ export default function Home() {
           </section>
         </main>
 
-        {/* Sticky Action Button / Footer */}
-        <div className="absolute bottom-6 left-0 right-0 px-6 z-20 flex justify-center">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3.5 px-6 rounded-full font-bold text-sm shadow-xl active:scale-95 transition-all duration-300 hover:bg-zinc-800 dark:hover:bg-zinc-100"
-          >
-            <Plus className="w-5 h-5 shrink-0" />
-            <span>เพิ่มรายการใหม่</span>
-          </button>
-        </div>
+        {/* Slip Scanner Modal */}
+        <SlipScannerModal
+          isOpen={isSlipScannerOpen}
+          onClose={() => setIsSlipScannerOpen(false)}
+          onScanSuccess={handleSlipScanSuccess}
+        />
 
         {/* Transaction Entry Modal Sheet */}
         <TransactionModal
-          key={isModalOpen}
+          key={`${isModalOpen}-${modalInitialData ? "prefilled" : "empty"}`}
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          initialData={modalInitialData}
+          onClose={() => {
+            setIsModalOpen(false);
+            setModalInitialData(null);
+          }}
           onSave={handleSaveTransaction}
         />
       </div>

@@ -23,28 +23,37 @@ const INCOME_CATEGORIES = [
   "รายรับอื่นๆ",
 ];
 
-export default function TransactionModal({ isOpen, onClose, onSave }) {
-  const [type, setType] = useState("expense"); // 'expense' | 'income'
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
-  const [description, setDescription] = useState("");
-  const [dateStr, setDateStr] = useState("");
-  const [timeStr, setTimeStr] = useState("");
+export default function TransactionModal({ isOpen, onClose, onSave, initialData = null }) {
+  const [type, setType] = useState(initialData?.type || "expense"); // 'expense' | 'income'
+  const [amount, setAmount] = useState(initialData?.amount || "");
+  const [category, setCategory] = useState(
+    initialData?.category || (initialData?.type === "income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0])
+  );
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [dateStr, setDateStr] = useState(initialData?.dateStr || "");
+  const [timeStr, setTimeStr] = useState(initialData?.timeStr || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Initialize dateStr and timeStr on client mount to avoid SSR mismatches
+  // Initialize dateStr and timeStr on client mount or update from initialData
   useEffect(() => {
-    const today = new Date();
-    const localDate = today.toLocaleDateString("sv-SE"); // sv-SE format is YYYY-MM-DD
-    const hours = String(today.getHours()).padStart(2, "0");
-    const minutes = String(today.getMinutes()).padStart(2, "0");
-    const localTime = `${hours}:${minutes}`;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDateStr(localDate);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTimeStr(localTime);
-  }, []);
+    if (initialData) {
+      if (initialData.type) setType(initialData.type);
+      if (initialData.amount) setAmount(String(initialData.amount));
+      if (initialData.category) setCategory(initialData.category);
+      if (initialData.description !== undefined) setDescription(initialData.description);
+      if (initialData.dateStr) setDateStr(initialData.dateStr);
+      if (initialData.timeStr) setTimeStr(initialData.timeStr);
+    } else {
+      const today = new Date();
+      const localDate = today.toLocaleDateString("sv-SE"); // sv-SE format is YYYY-MM-DD
+      const hours = String(today.getHours()).padStart(2, "0");
+      const minutes = String(today.getMinutes()).padStart(2, "0");
+      const localTime = `${hours}:${minutes}`;
+      setDateStr(localDate);
+      setTimeStr(localTime);
+    }
+  }, [initialData, isOpen]);
 
   const handleTypeChange = (newType) => {
     setType(newType);
