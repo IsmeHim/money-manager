@@ -29,15 +29,21 @@ export default function TransactionModal({ isOpen, onClose, onSave }) {
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [dateStr, setDateStr] = useState("");
+  const [timeStr, setTimeStr] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Initialize dateStr on client mount to avoid SSR mismatches
+  // Initialize dateStr and timeStr on client mount to avoid SSR mismatches
   useEffect(() => {
     const today = new Date();
     const localDate = today.toLocaleDateString("sv-SE"); // sv-SE format is YYYY-MM-DD
+    const hours = String(today.getHours()).padStart(2, "0");
+    const minutes = String(today.getMinutes()).padStart(2, "0");
+    const localTime = `${hours}:${minutes}`;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDateStr(localDate);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTimeStr(localTime);
   }, []);
 
   const handleTypeChange = (newType) => {
@@ -65,6 +71,7 @@ export default function TransactionModal({ isOpen, onClose, onSave }) {
         category,
         description,
         dateStr,
+        timeStr,
       };
 
       const success = await onSave(data);
@@ -205,19 +212,36 @@ export default function TransactionModal({ isOpen, onClose, onSave }) {
             </div>
           </div>
 
-          {/* Date Picker */}
-          <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800/40 px-4 py-3 rounded-2xl border border-zinc-100 dark:border-zinc-800/20">
-            <Calendar className="w-5 h-5 text-zinc-400 shrink-0" />
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300 shrink-0">
-              วันที่:
-            </span>
-            <input
-              type="date"
-              required
-              value={dateStr}
-              onChange={(e) => setDateStr(e.target.value)}
-              className="flex-1 bg-transparent text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-hidden"
-            />
+          {/* Date & Time Picker */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800/40 px-4 py-3 rounded-2xl border border-zinc-100 dark:border-zinc-800/20">
+              <Calendar className="w-5 h-5 text-zinc-400 shrink-0" />
+              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300 shrink-0">
+                วันที่:
+              </span>
+              <input
+                type="date"
+                required
+                value={dateStr}
+                onChange={(e) => setDateStr(e.target.value)}
+                className="flex-1 bg-transparent text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-hidden"
+              />
+            </div>
+            <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800/40 px-4 py-3 rounded-2xl border border-zinc-100 dark:border-zinc-800/20">
+              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300 shrink-0">
+                ⏰
+              </span>
+              <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300 shrink-0">
+                เวลา:
+              </span>
+              <input
+                type="time"
+                required
+                value={timeStr}
+                onChange={(e) => setTimeStr(e.target.value)}
+                className="flex-1 bg-transparent text-sm font-semibold text-zinc-800 dark:text-zinc-100 outline-hidden"
+              />
+            </div>
           </div>
 
           {/* Memo / Description */}

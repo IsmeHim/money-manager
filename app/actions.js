@@ -25,6 +25,7 @@ export async function addTransaction(data) {
       category: data.category,
       description: data.description || "",
       dateStr: data.dateStr, // "YYYY-MM-DD"
+      timeStr: data.timeStr || "00:00", // "HH:MM"
       createdAt: new Date(),
     };
 

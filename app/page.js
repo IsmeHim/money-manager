@@ -361,11 +361,10 @@ export default function Home() {
                         <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate max-w-[150px]">
                           {tx.description || `บันทึกรายการสำหรับ ${tx.category}`}
                         </p>
-                        {view !== "daily" && (
-                          <p className="text-[9px] text-zinc-400 font-medium">
-                            {formatThaiDate(tx.dateStr, "daily")}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-2 text-[9px] text-zinc-400 font-medium">
+                          <span>{formatThaiDate(tx.dateStr, "daily")}</span>
+                          {tx.timeStr && <span>• {tx.timeStr}</span>}
+                        </div>
                       </div>
                     </div>
 
