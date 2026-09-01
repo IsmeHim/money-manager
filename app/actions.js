@@ -222,3 +222,58 @@ export async function getDashboardData(view, dateStr) {
     return { success: false, error: error.message };
   }
 }
+
+export async function askFinancialBot(userMessage) {
+  try {
+    const { parseFinancialQuery, generateChatResponse } = await import("@/lib/chatEngine");
+    const parsed = parseFinancialQuery(userMessage);
+
+    if (parsed.intent === "greeting") {
+      return {
+        success: true,
+        response: generateChatResponse(parsed, []),
+      };
+    }
+
+    const client = await clientPromise;
+    const db = client.db();
+    const collection = db.collection("transactions");
+
+    let query = {};
+    if (parsed.searchKeyword) {
+      const escapedKw = parsed.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const keywordFilter = {
+        $or: [
+          { description: { $regex: escapedKw, $options: "i" } },
+          { category: { $regex: escapedKw, $options: "i" } },
+        ],
+      };
+
+      if (parsed.timeFilter && Object.keys(parsed.timeFilter).length > 0) {
+        query = {
+          $and: [keywordFilter, parsed.timeFilter],
+        };
+      } else {
+        query = keywordFilter;
+      }
+    } else {
+      query = parsed.timeFilter || {};
+    }
+
+    const rawTransactions = await collection.find(query).sort({ dateStr: -1, createdAt: -1 }).toArray();
+    const transactions = rawTransactions.map(serializeDoc);
+
+    const response = generateChatResponse(parsed, transactions);
+
+    return {
+      success: true,
+      response,
+    };
+  } catch (error) {
+    console.error("Error in financial chatbot:", error);
+    return {
+      success: false,
+      response: "ขออภัยครับ เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้งนะครับ",
+    };
+  }
+}

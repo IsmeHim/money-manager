@@ -19,6 +19,7 @@ import CategoryIcon from "@/components/CategoryIcon";
 import AnalyticsChart from "@/components/AnalyticsChart";
 import TransactionModal from "@/components/TransactionModal";
 import SlipScannerModal from "@/components/SlipScannerModal";
+import FinancialChatbotModal from "@/components/FinancialChatbotModal";
 
 // Helper to format Date string (YYYY-MM-DD) into Thai Readable Dates
 function formatThaiDate(dateStr, view) {
@@ -437,6 +438,9 @@ export default function Home() {
           }}
           onSave={handleSaveTransaction}
         />
+
+        {/* In-House AI Financial Chatbot */}
+        <FinancialChatbotModal />
       </div>
     </div>
   );
