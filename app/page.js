@@ -292,7 +292,7 @@ export default function Home() {
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                    รายรับรวม
+                    รายรับสะสม
                   </span>
                 </div>
                 <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">
@@ -307,7 +307,7 @@ export default function Home() {
                     <TrendingDown className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
-                    รายจ่ายรวม
+                    รายจ่ายสะสม
                   </span>
                 </div>
                 <p className="text-lg font-extrabold text-rose-700 dark:text-rose-400">

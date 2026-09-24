@@ -96,12 +96,14 @@ export async function getDashboardData(view, dateStr) {
       };
     }
 
-    const rawTransactions = await collection.find(query).sort({ dateStr: -1, createdAt: -1 }).toArray();
+    const [rawTransactions, accountTransactions] = await Promise.all([
+      collection.find(query).sort({ dateStr: -1, createdAt: -1 }).toArray(),
+      collection.find({}).project({ type: 1, amount: 1 }).toArray(),
+    ]);
     const transactions = rawTransactions.map(serializeDoc);
 
-    // Calculate Summary stats
-    let totalIncome = 0;
-    let totalExpense = 0;
+    let periodIncome = 0;
+    let periodExpense = 0;
 
     // Structure for chart data depending on view
     const chartMap = {};
@@ -109,9 +111,9 @@ export async function getDashboardData(view, dateStr) {
 
     transactions.forEach((tx) => {
       if (tx.type === "income") {
-        totalIncome += tx.amount;
+        periodIncome += tx.amount;
       } else {
-        totalExpense += tx.amount;
+        periodExpense += tx.amount;
       }
 
       // Grouping category breakdown
@@ -162,6 +164,15 @@ export async function getDashboardData(view, dateStr) {
       }
     });
 
+    let totalIncome = 0;
+    let totalExpense = 0;
+    accountTransactions.forEach((tx) => {
+      if (tx.type === "income") {
+        totalIncome += tx.amount;
+      } else {
+        totalExpense += tx.amount;
+      }
+    });
     const balance = totalIncome - totalExpense;
 
     // Convert chart Map to sorted array
@@ -199,7 +210,7 @@ export async function getDashboardData(view, dateStr) {
 
     // Convert categoryMap to arrays and compute percentages
     const categoryBreakdown = Object.values(categoryMap).map((item) => {
-      const totalOfType = item.type === "income" ? totalIncome : totalExpense;
+      const totalOfType = item.type === "income" ? periodIncome : periodExpense;
       return {
         ...item,
         percentage: totalOfType > 0 ? Math.round((item.amount / totalOfType) * 100) : 0,
