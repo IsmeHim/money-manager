@@ -38,6 +38,7 @@ export default function TransactionModal({ isOpen, onClose, onSave, initialData 
   // Initialize dateStr and timeStr on client mount or update from initialData
   useEffect(() => {
     if (initialData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (initialData.type) setType(initialData.type);
       if (initialData.amount) setAmount(String(initialData.amount));
       if (initialData.category) setCategory(initialData.category);

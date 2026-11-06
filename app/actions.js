@@ -2,6 +2,7 @@
 
 import clientPromise from "@/lib/db";
 import { ObjectId } from "mongodb";
+import { getCurrentUser, ensureDefaultAdmin } from "@/lib/auth";
 
 // Helper function to serialize MongoDB documents (converting ObjectId to string, etc.)
 function serializeDoc(doc) {
@@ -15,6 +16,13 @@ function serializeDoc(doc) {
 
 export async function addTransaction(data) {
   try {
+    await ensureDefaultAdmin();
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, unauthorized: true, error: "กรุณาเข้าสู่ระบบก่อนบันทึกรายการ" };
+    }
+
+    const walletOwner = currentUser.walletOwner || currentUser.familyGroup || currentUser.username;
     const client = await clientPromise;
     const db = client.db();
     const collection = db.collection("transactions");
@@ -26,6 +34,8 @@ export async function addTransaction(data) {
       description: data.description || "",
       dateStr: data.dateStr, // "YYYY-MM-DD"
       timeStr: data.timeStr || "00:00", // "HH:MM"
+      username: walletOwner,
+      recordedBy: currentUser.displayName || currentUser.username,
       createdAt: new Date(),
     };
 
@@ -41,13 +51,70 @@ export async function addTransaction(data) {
   }
 }
 
-export async function deleteTransaction(id) {
+export async function addBatchTransactions(items) {
   try {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("ไม่มีรายการที่ต้องการบันทึก");
+    }
+
+    await ensureDefaultAdmin();
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, unauthorized: true, error: "กรุณาเข้าสู่ระบบก่อนบันทึกรายการ" };
+    }
+
+    const walletOwner = currentUser.walletOwner || currentUser.familyGroup || currentUser.username;
     const client = await clientPromise;
     const db = client.db();
     const collection = db.collection("transactions");
 
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const docs = items.map((data) => {
+      const amt = parseFloat(data.amount);
+      if (isNaN(amt) || amt <= 0) {
+        throw new Error("มียอดเงินที่ไม่ถูกต้อง กรุณาตรวจสอบจำนวนเงิน");
+      }
+      return {
+        type: data.type || "expense",
+        amount: amt,
+        category: data.category || "อาหาร",
+        description: data.description || "",
+        dateStr: data.dateStr || new Date().toLocaleDateString("sv-SE"),
+        timeStr: data.timeStr || "00:00",
+        username: walletOwner,
+        recordedBy: currentUser.displayName || currentUser.username,
+        createdAt: new Date(),
+      };
+    });
+
+    const result = await collection.insertMany(docs);
+    return {
+      success: true,
+      insertedCount: result.insertedCount,
+    };
+  } catch (error) {
+    console.error("Error adding batch transactions:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteTransaction(id) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, unauthorized: true, error: "กรุณาเข้าสู่ระบบก่อนลบรายการ" };
+    }
+
+    const walletOwner = currentUser.walletOwner || currentUser.familyGroup || currentUser.username;
+    const client = await clientPromise;
+    const db = client.db();
+    const collection = db.collection("transactions");
+
+    const deleteFilter = { _id: new ObjectId(id) };
+    if (currentUser.role !== "admin") {
+      deleteFilter.username = walletOwner;
+    }
+
+    const result = await collection.deleteOne(deleteFilter);
     if (result.deletedCount === 1) {
       return { success: true };
     } else {
@@ -61,6 +128,12 @@ export async function deleteTransaction(id) {
 
 export async function getDashboardData(view, dateStr) {
   try {
+    await ensureDefaultAdmin();
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, unauthorized: true, error: "กรุณาเข้าสู่ระบบ" };
+    }
+
     const client = await clientPromise;
     const db = client.db();
     const collection = db.collection("transactions");
@@ -76,29 +149,45 @@ export async function getDashboardData(view, dateStr) {
       }
     }
 
-    let query = {};
+    let dateQuery = {};
     if (view === "daily") {
-      query.dateStr = dateStr; // Exact match: "YYYY-MM-DD"
+      dateQuery.dateStr = dateStr; // Exact match: "YYYY-MM-DD"
     } else if (view === "monthly") {
       // Range query: from "YYYY-MM-01" to "YYYY-MM-DD" (days in month)
       const year = parseInt(dateStr.split("-")[0], 10);
       const monthIndex = parseInt(dateStr.split("-")[1], 10);
       const daysInMonth = new Date(year, monthIndex, 0).getDate();
-      query.dateStr = {
+      dateQuery.dateStr = {
         $gte: `${dateStr}-01`,
         $lte: `${dateStr}-${String(daysInMonth).padStart(2, "0")}`,
       };
     } else if (view === "yearly") {
       // Range query: from "YYYY-01-01" to "YYYY-12-31"
-      query.dateStr = {
+      dateQuery.dateStr = {
         $gte: `${dateStr}-01-01`,
         $lte: `${dateStr}-12-31`,
       };
     }
 
+    const targetUsername = currentUser.walletOwner || currentUser.familyGroup || currentUser.username;
+    const userScope =
+      targetUsername === "him"
+        ? {
+            $or: [
+              { username: "him" },
+              { username: { $exists: false } },
+              { username: null },
+            ],
+          }
+        : { username: targetUsername };
+
+    const query = {
+      $and: [dateQuery, userScope],
+    };
+
     const [rawTransactions, accountTransactions] = await Promise.all([
       collection.find(query).sort({ dateStr: -1, createdAt: -1 }).toArray(),
-      collection.find({}).project({ type: 1, amount: 1 }).toArray(),
+      collection.find(userScope).project({ type: 1, amount: 1 }).toArray(),
     ]);
     const transactions = rawTransactions.map(serializeDoc);
 
@@ -236,20 +325,40 @@ export async function getDashboardData(view, dateStr) {
 
 export async function askFinancialBot(userMessage) {
   try {
-    const { parseFinancialQuery, generateChatResponse } = await import("@/lib/chatEngine");
-    const parsed = parseFinancialQuery(userMessage);
-
-    if (parsed.intent === "greeting") {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return {
-        success: true,
-        response: generateChatResponse(parsed, []),
+        success: false,
+        unauthorized: true,
+        response: "กรุณาเข้าสู่ระบบก่อนใช้งานผู้ช่วย AI ครับ",
       };
     }
+
+    const { parseFinancialQuery, generateChatResponse } = await import("@/lib/chatEngine");
+    const { generateGeminiFinancialAnswer, buildUserFinancialContext } = await import(
+      "@/lib/geminiService"
+    );
+
+    const parsed = parseFinancialQuery(userMessage);
 
     const client = await clientPromise;
     const db = client.db();
     const collection = db.collection("transactions");
 
+    // Strictly isolate data to the logged-in user's wallet (or family wallet if linked)
+    const targetUsername = currentUser.walletOwner || currentUser.familyGroup || currentUser.username;
+    const userScope =
+      targetUsername === "him"
+        ? {
+            $or: [
+              { username: "him" },
+              { username: { $exists: false } },
+              { username: null },
+            ],
+          }
+        : { username: targetUsername };
+
+    // Build targeted filter from NLP query
     let query = {};
     if (parsed.searchKeyword) {
       const escapedKw = parsed.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -258,7 +367,6 @@ export async function askFinancialBot(userMessage) {
         { category: { $regex: escapedKw, $options: "i" } },
       ];
 
-      // If user asks for generic food like 'ข้าว', also match 'อาหาร' category or 'ข้า'
       if (
         parsed.searchKeyword === "ข้าว" ||
         parsed.searchKeyword === "อาหาร" ||
@@ -272,9 +380,7 @@ export async function askFinancialBot(userMessage) {
       const keywordFilter = { $or: conditions };
 
       if (parsed.timeFilter && Object.keys(parsed.timeFilter).length > 0) {
-        query = {
-          $and: [keywordFilter, parsed.timeFilter],
-        };
+        query = { $and: [keywordFilter, parsed.timeFilter] };
       } else {
         query = keywordFilter;
       }
@@ -282,14 +388,63 @@ export async function askFinancialBot(userMessage) {
       query = parsed.timeFilter || {};
     }
 
-    const rawTransactions = await collection.find(query).sort({ dateStr: -1, createdAt: -1 }).toArray();
-    const transactions = rawTransactions.map(serializeDoc);
+    const finalMatchedQuery =
+      Object.keys(query).length > 0 ? { $and: [query, userScope] } : userScope;
 
-    const response = generateChatResponse(parsed, transactions);
+    const [rawMatched, rawAllUserTx, aiConfigDoc] = await Promise.all([
+      collection.find(finalMatchedQuery).sort({ dateStr: -1, createdAt: -1 }).toArray(),
+      collection.find(userScope).sort({ dateStr: -1, createdAt: -1 }).toArray(),
+      db.collection("system_settings").findOne({ key: "ai_config" }),
+    ]);
+
+    const matchedTransactions = rawMatched.map(serializeDoc);
+    const allUserTransactions = rawAllUserTx.map(serializeDoc);
+
+    // Check if Super Admin enabled Gemini AI and configured an API Key
+    const hasGeminiKey = Boolean(
+      (aiConfigDoc?.apiKey && aiConfigDoc.apiKey.trim()) || process.env.GEMINI_API_KEY
+    );
+
+    if (aiConfigDoc?.isEnabled && hasGeminiKey) {
+      const userContextText = buildUserFinancialContext({
+        currentUser,
+        walletOwner: targetUsername,
+        allUserTransactions,
+        matchedTransactions,
+        parsedQuery: parsed,
+      });
+
+      const geminiRes = await generateGeminiFinancialAnswer({
+        aiConfig: aiConfigDoc,
+        userContextText,
+        userQuestion: userMessage,
+      });
+
+      if (geminiRes.success && geminiRes.response) {
+        return {
+          success: true,
+          response: geminiRes.response,
+          usedModel: geminiRes.usedModel,
+          fallbackUsed: geminiRes.fallbackUsed,
+          source: "gemini",
+          walletOwner: targetUsername,
+        };
+      }
+    }
+
+    // Fallback to fast built-in Smart Thai NLP Engine (strictly using this user's transactions)
+    const response = generateChatResponse(
+      parsed,
+      parsed.intent === "greeting" ? [] : matchedTransactions
+    );
 
     return {
       success: true,
       response,
+      usedModel: "Smart Local NLP",
+      fallbackUsed: false,
+      source: "local",
+      walletOwner: targetUsername,
     };
   } catch (error) {
     console.error("Error in financial chatbot:", error);

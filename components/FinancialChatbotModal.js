@@ -24,7 +24,7 @@ const QUICK_CHIPS = [
   { label: "🗓️ สรุปเดือนนี้", query: "สรุปรายรับรายจ่ายเดือนนี้" },
 ];
 
-export default function FinancialChatbotModal() {
+export default function FinancialChatbotModal({ currentUser }) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,13 +32,14 @@ export default function FinancialChatbotModal() {
     {
       id: "welcome",
       sender: "bot",
-      text: `สวัสดีครับ! ผมคือผู้ช่วยการเงินส่วนตัวของคุณ 🤖✨\n\nคุณสามารถพิมพ์ถามคำถาม เช่น:\n• "ผมกินข้าวผัดเผ็ดล่าสุดวันไหน"\n• "ผมเปลี่ยนน้ำมันเครื่องล่าสุดเมื่อไหร่"\n• "ผมเติมเน็ตล่าสุดวันไหน"\n• "เมื่อวานใช้ไปเท่าไร"\n• "ยอดเงินคงเหลือตอนนี้"\nหรือแตะปุ่มลัดด้านล่างได้เลยครับ!`,
+      text: `สวัสดีครับ! ผมคือผู้ช่วยการเงินส่วนตัวของคุณ 🤖✨\n\nคุณสามารถพิมพ์ถามคำถามจากข้อมูลบัญชีของคุณได้เลย เช่น:\n• "ผมกินข้าวผัดเผ็ดล่าสุดวันไหน"\n• "วันที่ 28 สิงหา ผมใช้ไปเท่าไร"\n• "ผมเปลี่ยนน้ำมันเครื่องล่าสุดเมื่อไหร่"\n• "เดือนนี้ใช้หมวดไหนเยอะสุด ช่วยวิเคราะห์หน่อย"\n• "ยอดเงินคงเหลือตอนนี้"\nหรือแตะปุ่มลัดด้านล่างได้เลยครับ!`,
       time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const msgIdRef = useRef(1);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -58,8 +59,9 @@ export default function FinancialChatbotModal() {
     const text = (textToSend || input).trim();
     if (!text || loading) return;
 
+    msgIdRef.current += 1;
     const userMsg = {
-      id: Date.now().toString(),
+      id: `user-${msgIdRef.current}`,
       sender: "user",
       text,
       time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
@@ -71,18 +73,23 @@ export default function FinancialChatbotModal() {
 
     try {
       const res = await askFinancialBot(text);
+      msgIdRef.current += 1;
       const botMsg = {
-        id: (Date.now() + 1).toString(),
+        id: `bot-${msgIdRef.current}`,
         sender: "bot",
         text: res.response || "ขออภัยครับ ไม่สามารถดึงข้อมูลได้ในขณะนี้",
+        usedModel: res.usedModel || null,
+        fallbackUsed: Boolean(res.fallbackUsed),
+        source: res.source || "local",
         time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, botMsg]);
-    } catch (err) {
+    } catch {
+      msgIdRef.current += 1;
       setMessages((prev) => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: `bot-err-${msgIdRef.current}`,
           sender: "bot",
           text: "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้งครับ",
           time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
@@ -135,11 +142,13 @@ export default function FinancialChatbotModal() {
                   <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
                     AI ผู้ช่วยการเงิน
                     <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full">
-                      In-House
+                      Gemini Ready
                     </span>
                   </h3>
                   <p className="text-[10.5px] text-zinc-400">
-                    ตอบคำถามรายรับ-รายจ่ายทันที
+                    {currentUser
+                      ? `ข้อมูลเฉพาะบัญชี @${currentUser.walletOwner || currentUser.username}`
+                      : "ตอบคำถามรายรับ-รายจ่ายทันที"}
                   </p>
                 </div>
               </div>
@@ -173,13 +182,22 @@ export default function FinancialChatbotModal() {
                       }`}
                     >
                       {msg.text}
-                      <span
-                        className={`block text-[9px] mt-1.5 text-right ${
+                      <div
+                        className={`flex items-center justify-between gap-2 mt-1.5 ${
                           isBot ? "text-zinc-400 dark:text-zinc-500" : "text-indigo-200"
                         }`}
                       >
-                        {msg.time}
-                      </span>
+                        {isBot && msg.usedModel ? (
+                          <span className="text-[9px] font-mono font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            {msg.usedModel}
+                            {msg.fallbackUsed ? " (Auto-Fallback)" : ""}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <span className="text-[9px]">{msg.time}</span>
+                      </div>
                     </div>
                   </div>
                 );
