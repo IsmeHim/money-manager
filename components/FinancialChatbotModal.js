@@ -1,70 +1,156 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Bot,
   X,
   Send,
   Sparkles,
-  MessageSquare,
-  TrendingUp,
-  Calendar,
-  DollarSign,
-  Utensils,
+  PanelLeft,
+  SquarePen,
 } from "lucide-react";
 import { askFinancialBot } from "@/app/actions";
+import {
+  getChatSessionsAction,
+  togglePinChatSessionAction,
+  deleteChatSessionAction,
+} from "@/app/chatHistoryActions";
+import ChatSidebar from "@/components/chat/ChatSidebar";
 
 const QUICK_CHIPS = [
   { label: "💰 ยอดเงินคงเหลือ", query: "ยอดเงินคงเหลือตอนนี้มีเท่าไร" },
   { label: "📅 วันนี้ใช้ไปเท่าไร", query: "วันนี้ผมใช้ไปเท่าไร" },
   { label: "⏪ เมื่อวานใช้ไปเท่าไร", query: "เมื่อวานนี้ผมใช้เงินไปเท่าไร" },
   { label: "🍔 กินข้าวล่าสุดวันไหน", query: "ผมกินข้าวล่าสุดวันไหน" },
-  { label: "🚗 เปลี่ยนน้ำมันเครื่องล่าสุด", query: "ผมเปลี่ยนน้ำมันเครื่องล่าสุดวันไหน" },
-  { label: "📶 เติมเน็ตล่าสุดวันไหน", query: "ผมเติมเน็ตล่าสุดวันไหน" },
+  { label: "📒 ใครติดหนี้ผมบ้าง", query: "ตอนนี้ใครติดหนี้ผมอยู่บ้าง และผมติดหนี้ใครอยู่เท่าไหร่" },
   { label: "🗓️ สรุปเดือนนี้", query: "สรุปรายรับรายจ่ายเดือนนี้" },
 ];
 
+const WELCOME_MSG = {
+  id: "welcome",
+  sender: "bot",
+  text: `สวัสดีครับ! ผมคือผู้ช่วยการเงินส่วนตัวของคุณ 🤖✨\n\nคุณสามารถพิมพ์ถามคำถามจากข้อมูลบัญชีของคุณได้เลย เช่น:\n• "ตั้งแต่วันที่ 3 พ.ย. ถึงปัจจุบันผมใช้เงินไปเท่าไหร่"\n• "สรุปรายจ่ายเดือนตุลาคมให้หน่อย"\n• "ผมกินข้าวผัดเผ็ดล่าสุดวันไหน"\n• "ตอนนี้ใครติดหนี้ผมอยู่บ้าง"\nหรือแตะปุ่มเมด้านซ้ายบนเพื่อเปิดดูแชทเก่าได้เหมือน Gemini เลยครับ!`,
+  time: "",
+};
+
+function sortSessions(list) {
+  return [...list].sort((a, b) => {
+    if (Boolean(b.isPinned) !== Boolean(a.isPinned)) {
+      return b.isPinned ? 1 : -1;
+    }
+    const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+    const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+    return timeB - timeA;
+  });
+}
+
 export default function FinancialChatbotModal({ currentUser }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: "welcome",
-      sender: "bot",
-      text: `สวัสดีครับ! ผมคือผู้ช่วยการเงินส่วนตัวของคุณ 🤖✨\n\nคุณสามารถพิมพ์ถามคำถามจากข้อมูลบัญชีของคุณได้เลย เช่น:\n• "ผมกินข้าวผัดเผ็ดล่าสุดวันไหน"\n• "วันที่ 28 สิงหา ผมใช้ไปเท่าไร"\n• "ผมเปลี่ยนน้ำมันเครื่องล่าสุดเมื่อไหร่"\n• "เดือนนี้ใช้หมวดไหนเยอะสุด ช่วยวิเคราะห์หน่อย"\n• "ยอดเงินคงเหลือตอนนี้"\nหรือแตะปุ่มลัดด้านล่างได้เลยครับ!`,
-      time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
-    },
-  ]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeSessionTitle, setActiveSessionTitle] = useState(null);
+  const [messages, setMessages] = useState([WELCOME_MSG]);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const msgIdRef = useRef(1);
 
-  // Auto scroll to bottom
+  const loadSessions = useCallback(async () => {
+    if (!currentUser) return;
+    setSessionsLoading(true);
+    try {
+      const res = await getChatSessionsAction();
+      if (res.success && Array.isArray(res.sessions)) {
+        setSessions(sortSessions(res.sessions));
+      }
+    } catch {
+      // ignore error
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [currentUser]);
+
+  // Every time the user opens the chatbot modal, start as a fresh New Chat (Gemini style)
+  // while loading past sessions in the background for the Sidebar
+  const handleOpenModal = () => {
+    setActiveSessionId(null);
+    setActiveSessionTitle(null);
+    setMessages([WELCOME_MSG]);
+    setSidebarOpen(false);
+    setIsOpen(true);
+    loadSessions();
+  };
+
+  // Auto scroll to bottom when messages change
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isOpen]);
 
-  // Focus input when opened
+  // Focus input when opened or switching sessions
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !sidebarOpen) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [isOpen]);
+  }, [isOpen, sidebarOpen, activeSessionId]);
+
+  const handleStartNewChat = () => {
+    setActiveSessionId(null);
+    setActiveSessionTitle(null);
+    setMessages([WELCOME_MSG]);
+    setSidebarOpen(false);
+  };
+
+  const handleSelectSession = (session) => {
+    setActiveSessionId(session.id);
+    setActiveSessionTitle(session.title);
+    setMessages([WELCOME_MSG, ...(session.messages || [])]);
+    setSidebarOpen(false);
+  };
+
+  const handleTogglePin = async (sessionId) => {
+    setSessions((prev) =>
+      sortSessions(
+        prev.map((s) =>
+          s.id === sessionId ? { ...s, isPinned: !s.isPinned } : s
+        )
+      )
+    );
+    await togglePinChatSessionAction(sessionId);
+  };
+
+  const handleDeleteSession = async (sessionId) => {
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    if (activeSessionId === sessionId) {
+      setActiveSessionId(null);
+      setActiveSessionTitle(null);
+      setMessages([WELCOME_MSG]);
+    }
+    await deleteChatSessionAction(sessionId);
+  };
 
   const handleSendMessage = async (textToSend) => {
     const text = (textToSend || input).trim();
     if (!text || loading) return;
 
     msgIdRef.current += 1;
+    const tempUserId = `user-temp-${msgIdRef.current}`;
+    const nowTime = new Date().toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     const userMsg = {
-      id: `user-${msgIdRef.current}`,
+      id: tempUserId,
       sender: "user",
       text,
-      time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+      time: nowTime,
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -72,18 +158,68 @@ export default function FinancialChatbotModal({ currentUser }) {
     setLoading(true);
 
     try {
-      const res = await askFinancialBot(text);
+      const res = await askFinancialBot(text, activeSessionId);
       msgIdRef.current += 1;
+      const finalUserMsg = {
+        ...userMsg,
+        id: res.userMessageId || tempUserId,
+      };
       const botMsg = {
-        id: `bot-${msgIdRef.current}`,
+        id: res.botMessageId || `bot-${msgIdRef.current}`,
         sender: "bot",
         text: res.response || "ขออภัยครับ ไม่สามารถดึงข้อมูลได้ในขณะนี้",
         usedModel: res.usedModel || null,
         fallbackUsed: Boolean(res.fallbackUsed),
         source: res.source || "local",
-        time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+        time: new Date().toLocaleTimeString("th-TH", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
-      setMessages((prev) => [...prev, botMsg]);
+
+      setMessages((prev) =>
+        prev
+          .map((m) => (m.id === tempUserId ? finalUserMsg : m))
+          .concat(botMsg)
+      );
+
+      if (res.sessionId) {
+        const targetSessionId = res.sessionId;
+        const targetTitle = res.sessionTitle || activeSessionTitle || text.slice(0, 42);
+        setActiveSessionId(targetSessionId);
+        setActiveSessionTitle(targetTitle);
+
+        // Update local sidebar sessions list immediately
+        setSessions((prev) => {
+          const exists = prev.some((s) => s.id === targetSessionId);
+          const nowIso = new Date().toISOString();
+          if (exists) {
+            return sortSessions(
+              prev.map((s) =>
+                s.id === targetSessionId
+                  ? {
+                      ...s,
+                      updatedAt: nowIso,
+                      messageCount: (s.messages?.length || 0) + 2,
+                      messages: [...(s.messages || []), finalUserMsg, botMsg],
+                    }
+                  : s
+              )
+            );
+          } else {
+            const newSessionItem = {
+              id: targetSessionId,
+              title: targetTitle,
+              isPinned: false,
+              createdAt: nowIso,
+              updatedAt: nowIso,
+              messageCount: 2,
+              messages: [finalUserMsg, botMsg],
+            };
+            return sortSessions([newSessionItem, ...prev]);
+          }
+        });
+      }
     } catch {
       msgIdRef.current += 1;
       setMessages((prev) => [
@@ -92,7 +228,10 @@ export default function FinancialChatbotModal({ currentUser }) {
           id: `bot-err-${msgIdRef.current}`,
           sender: "bot",
           text: "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้งครับ",
-          time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+          time: new Date().toLocaleTimeString("th-TH", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         },
       ]);
     } finally {
@@ -111,13 +250,13 @@ export default function FinancialChatbotModal({ currentUser }) {
     <>
       {/* Floating Chat Trigger Button */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpenModal}
         aria-label="ถาม AI แชทบอทการเงิน"
         className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-linear-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-2xl shadow-indigo-600/40 hover:shadow-indigo-600/60 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 border-2 border-indigo-300/40 group"
       >
         <div className="relative">
           <Bot className="w-7 h-7 transition-transform group-hover:rotate-12" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-indigo-600 rounded-full animate-pulse"></span>
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-indigo-600 rounded-full animate-pulse" />
         </div>
       </button>
 
@@ -128,36 +267,84 @@ export default function FinancialChatbotModal({ currentUser }) {
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-fade-in"
             onClick={() => setIsOpen(false)}
-          ></div>
+          />
 
           {/* Modal Container */}
           <div className="relative w-full sm:max-w-lg bg-white dark:bg-zinc-900 rounded-t-[2.5rem] sm:rounded-[2rem] border-t sm:border border-zinc-100 dark:border-zinc-800/80 shadow-2xl overflow-hidden h-[85vh] max-h-[700px] flex flex-col justify-between transition-all duration-300 animate-slide-up sm:animate-scale-in">
+            {/* Gemini-Style Sidebar Drawer */}
+            <ChatSidebar
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+              sessions={sessions}
+              activeSessionId={activeSessionId}
+              onSelectSession={handleSelectSession}
+              onStartNewChat={handleStartNewChat}
+              onTogglePin={handleTogglePin}
+              onDeleteSession={handleDeleteSession}
+              loading={sessionsLoading}
+            />
+
             {/* Header */}
-            <div className="px-5 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-linear-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
-                  <Bot className="w-5 h-5" />
+            <div className="px-4 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-md">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {/* Sidebar Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  className="relative p-2.5 rounded-2xl bg-white dark:bg-zinc-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-zinc-700 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700/70 transition-all active:scale-95 shrink-0 shadow-2xs"
+                  title="เปิดแถบประวัติแชท (Sidebar)"
+                >
+                  <PanelLeft className="w-4.5 h-4.5" />
+                  {sessions.length > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-indigo-600 text-white text-[9px] font-extrabold flex items-center justify-center">
+                      {sessions.length}
+                    </span>
+                  )}
+                </button>
+
+                <div className="w-9 h-9 rounded-2xl bg-linear-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
+                  <Bot className="w-4.5 h-4.5" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
-                    AI ผู้ช่วยการเงิน
-                    <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full">
-                      Gemini Ready
+
+                <div className="min-w-0">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
+                    <span className="truncate">AI ผู้ช่วยการเงิน</span>
+                    <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full shrink-0">
+                      Gemini
                     </span>
                   </h3>
-                  <p className="text-[10.5px] text-zinc-400">
-                    {currentUser
-                      ? `ข้อมูลเฉพาะบัญชี @${currentUser.walletOwner || currentUser.username}`
-                      : "ตอบคำถามรายรับ-รายจ่ายทันที"}
+                  <p className="text-[10.5px] text-zinc-400 truncate max-w-[180px] sm:max-w-[230px]">
+                    {activeSessionTitle
+                      ? `💬 ${activeSessionTitle}`
+                      : currentUser
+                      ? `แชทใหม่ • บัญชี @${currentUser.walletOwner || currentUser.username}`
+                      : "แชทใหม่ • ตอบคำถามทันที"}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* New Chat Quick Action Button */}
+                {activeSessionId && (
+                  <button
+                    type="button"
+                    onClick={handleStartNewChat}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-[11px] font-extrabold transition-colors"
+                    title="เริ่มแชทใหม่"
+                  >
+                    <SquarePen className="w-3.5 h-3.5" />
+                    <span>แชทใหม่</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Chat Messages Body */}
@@ -174,6 +361,7 @@ export default function FinancialChatbotModal({ currentUser }) {
                         <Bot className="w-4 h-4" />
                       </div>
                     )}
+
                     <div
                       className={`max-w-[82%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-xs whitespace-pre-line ${
                         isBot
@@ -210,9 +398,9 @@ export default function FinancialChatbotModal({ currentUser }) {
                     <Bot className="w-4 h-4" />
                   </div>
                   <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-xs py-2.5 px-4 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce"></span>
-                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]"></span>
-                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]"></span>
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" />
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]" />
                   </div>
                 </div>
               )}

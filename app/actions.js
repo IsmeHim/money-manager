@@ -323,7 +323,7 @@ export async function getDashboardData(view, dateStr) {
   }
 }
 
-export async function askFinancialBot(userMessage) {
+export async function askFinancialBot(userMessage, sessionId = null) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -337,6 +337,7 @@ export async function askFinancialBot(userMessage) {
     const client = await clientPromise;
     const db = client.db();
     const collection = db.collection("transactions");
+    const sessionsCol = db.collection("chat_sessions");
 
     // Strictly isolate data to the logged-in user's wallet (or family wallet if linked)
     const targetUsername = currentUser.walletOwner || currentUser.familyGroup || currentUser.username;
@@ -351,12 +352,99 @@ export async function askFinancialBot(userMessage) {
           }
         : { username: targetUsername };
 
-    const [rawAllUserTx, aiConfigDoc] = await Promise.all([
+    const sessionQuery =
+      sessionId && ObjectId.isValid(sessionId)
+        ? sessionsCol.findOne({
+            _id: new ObjectId(sessionId),
+            username: currentUser.username,
+          })
+        : Promise.resolve(null);
+
+    const [rawAllUserTx, rawAllUserDebts, existingSession, aiConfigDoc] = await Promise.all([
       collection.find(userScope).sort({ dateStr: -1, createdAt: -1 }).toArray(),
+      db.collection("debts").find(userScope).sort({ status: -1, dateStr: -1 }).toArray(),
+      sessionQuery,
       db.collection("system_settings").findOne({ key: "ai_config" }),
     ]);
 
     const allUserTransactions = rawAllUserTx.map(serializeDoc);
+    const allUserDebts = rawAllUserDebts.map((d) => ({
+      ...d,
+      _id: d._id.toString(),
+    }));
+    const recentChatHistory = Array.isArray(existingSession?.messages)
+      ? existingSession.messages.slice(-10)
+      : [];
+
+    const nowTimeStr = new Date().toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Helper to persist user question + bot reply into chat_sessions collection (Gemini-style sessions)
+    const saveTurnToSession = async (botReplyObj) => {
+      try {
+        const now = new Date();
+        const userMsgId = new ObjectId().toString();
+        const botMsgId = new ObjectId().toString();
+
+        const userMsgDoc = {
+          id: userMsgId,
+          sender: "user",
+          text: userMessage,
+          time: nowTimeStr,
+          createdAt: now,
+        };
+
+        const botMsgDoc = {
+          id: botMsgId,
+          sender: "bot",
+          text: botReplyObj.response,
+          usedModel: botReplyObj.usedModel || null,
+          fallbackUsed: Boolean(botReplyObj.fallbackUsed),
+          source: botReplyObj.source || "local",
+          time: nowTimeStr,
+          createdAt: new Date(now.getTime() + 10),
+        };
+
+        if (existingSession) {
+          await sessionsCol.updateOne(
+            { _id: existingSession._id, username: currentUser.username },
+            {
+              $push: { messages: { $each: [userMsgDoc, botMsgDoc] } },
+              $set: { updatedAt: new Date() },
+            }
+          );
+          return {
+            sessionId: existingSession._id.toString(),
+            sessionTitle: existingSession.title,
+            userMessageId: userMsgId,
+            botMessageId: botMsgId,
+          };
+        } else {
+          const cleanTitle =
+            userMessage.trim().replace(/\s+/g, " ").slice(0, 42) || "แชทการเงินใหม่";
+          const newSessionDoc = {
+            username: currentUser.username,
+            title: cleanTitle,
+            isPinned: false,
+            messages: [userMsgDoc, botMsgDoc],
+            createdAt: now,
+            updatedAt: now,
+          };
+          const inserted = await sessionsCol.insertOne(newSessionDoc);
+          return {
+            sessionId: inserted.insertedId.toString(),
+            sessionTitle: cleanTitle,
+            userMessageId: userMsgId,
+            botMessageId: botMsgId,
+          };
+        }
+      } catch (e) {
+        console.error("Failed to save chat session:", e);
+        return {};
+      }
+    };
 
     // 1. Primary Brain: Let Google Gemini think and understand the question directly over the user's full dataset
     const hasGeminiKey = Boolean(
@@ -372,16 +460,18 @@ export async function askFinancialBot(userMessage) {
         currentUser,
         walletOwner: targetUsername,
         allUserTransactions,
+        allUserDebts,
       });
 
       const geminiRes = await generateGeminiFinancialAnswer({
         aiConfig: aiConfigDoc,
         userContextText,
         userQuestion: userMessage,
+        recentChatHistory,
       });
 
       if (geminiRes.success && geminiRes.response) {
-        return {
+        const resultPayload = {
           success: true,
           response: geminiRes.response,
           usedModel: geminiRes.usedModel,
@@ -389,6 +479,8 @@ export async function askFinancialBot(userMessage) {
           source: "gemini",
           walletOwner: targetUsername,
         };
+        const sessionMeta = await saveTurnToSession(resultPayload);
+        return { ...resultPayload, ...sessionMeta };
       }
     }
 
@@ -434,7 +526,7 @@ export async function askFinancialBot(userMessage) {
       parsed.intent === "greeting" ? [] : matchedTransactions
     );
 
-    return {
+    const fallbackPayload = {
       success: true,
       response: directComputedAnswer,
       usedModel: "Smart Local NLP",
@@ -442,6 +534,8 @@ export async function askFinancialBot(userMessage) {
       source: "local",
       walletOwner: targetUsername,
     };
+    const sessionMeta = await saveTurnToSession(fallbackPayload);
+    return { ...fallbackPayload, ...sessionMeta };
   } catch (error) {
     console.error("Error in financial chatbot:", error);
     return {
