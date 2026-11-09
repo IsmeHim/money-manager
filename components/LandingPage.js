@@ -11,7 +11,6 @@ import {
   BarChart3,
   ArrowRight,
   CheckCircle2,
-  ShieldCheck,
   Zap,
   Layers,
   TrendingUp,
@@ -19,8 +18,12 @@ import {
   LogIn,
   UserPlus,
   Smartphone,
-  Clock,
   Lock,
+  BookOpen,
+  Pin,
+  PanelLeft,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -47,25 +50,28 @@ export default function LandingPage() {
                   Money Manager
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-                  <Sparkles className="w-2.5 h-2.5" /> AI 2.0
+                  <Sparkles className="w-2.5 h-2.5" /> Smart AI
                 </span>
               </div>
               <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-                Smart Finance Platform
+                AI Finance & Debt Platform
               </p>
             </div>
           </div>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-zinc-600 dark:text-zinc-400">
+          <nav className="hidden md:flex items-center gap-7 text-xs font-bold text-zinc-600 dark:text-zinc-400">
             <a href="#features" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              ฟีเจอร์อัจฉริยะ
+              ฟีเจอร์ทั้งหมด
+            </a>
+            <a href="#debt-ai" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              ระบบหนี้สิน & ผู้ช่วย AI
             </a>
             <a href="#how-it-works" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
               วิธีใช้งาน
             </a>
             <a href="#family" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              ระบบครอบครัว
+              กระเป๋าครอบครัว
             </a>
           </nav>
 
@@ -99,22 +105,38 @@ export default function LandingPage() {
               {/* Highlight Pill */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-800/70 text-indigo-600 dark:text-indigo-300 text-xs font-extrabold shadow-xs animate-fade-in">
                 <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
-                <span>ใหม่! สแกนหลายสลิปพร้อมกัน + ผู้ช่วยการเงิน AI ส่วนตัว</span>
+                <span>ใหม่! สมุดบันทึกหนี้สิน + ผู้ช่วย AI ส่วนตัวพร้อม Sidebar ประวัติแชท</span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-3xl sm:text-5xl lg:text-[3.4rem] font-black tracking-tight leading-[1.15] text-zinc-900 dark:text-white">
-                บันทึกรายรับ-รายจ่าย{" "}
+              <h1 className="text-3xl sm:text-5xl lg:text-[3.35rem] font-black tracking-tight leading-[1.15] text-zinc-900 dark:text-white">
+                จัดการรายรับ-รายจ่าย{" "}
                 <span className="bg-linear-to-r from-indigo-600 via-violet-500 to-emerald-500 bg-clip-text text-transparent">
-                  อัจฉริยะที่สุด
+                  และหนี้สินครบวงจร
                 </span>{" "}
-                แค่โยนสลิปให้ AI จัดการ
+                ด้วยผู้ช่วย AI อัจฉริยะของเรา
               </h1>
 
               {/* Description */}
               <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                บอกลาการนั่งพิมพ์ตัวเลขทีละรายการ! ด้วยระบบสแกนสลิปธนาคารอัตโนมัติ รองรับการแนบหลายสลิปพร้อมกัน เหมารวมยอดในคลิกเดียว พร้อมแชทบอท AI ที่ตอบคำถามการเงินของคุณได้ทันที
+                ครบจบในที่เดียว! สแกนหลายสลิปพร้อมกัน จดบันทึกทั้ง <strong>คนที่ติดหนี้เรา</strong> และ <strong>เราติดหนี้คนอื่น</strong> กดรับคืน/จ่ายคืนได้ในคลิกเดียว พร้อม <strong>Money Manager AI</strong> เลขาส่วนตัวที่ช่วยคิด วิเคราะห์ เปิดดูประวัติแชทเก่า และปักหมุดเรื่องสำคัญให้คุณได้ทันที
               </p>
+
+              {/* Feature Quick Tags */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 shadow-2xs">
+                  📸 สแกนหลายสลิปพร้อมกัน
+                </span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 shadow-2xs">
+                  📒 บันทึกลูกหนี้ / เจ้าหนี้
+                </span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 shadow-2xs">
+                  🤖 ผู้ช่วย AI ส่วนตัว + Sidebar แชท
+                </span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 shadow-2xs">
+                  👨‍👩‍👧‍👦 แชร์กระเป๋าครอบครัว
+                </span>
+              </div>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
@@ -137,18 +159,18 @@ export default function LandingPage() {
               </div>
 
               {/* Trust Badges */}
-              <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs font-bold text-zinc-500 dark:text-zinc-400">
+              <div className="pt-3 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs font-bold text-zinc-500 dark:text-zinc-400">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   รองรับสลิปทุกธนาคารไทย
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  ไม่อัปโหลดรูปสลิปเก็บไว้
+                  ข้อมูลแยกเฉพาะบัญชี 100%
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  แยกบัญชีส่วนตัว & ครอบครัว
+                  AI วิเคราะห์การเงินเฉพาะตัวคุณ
                 </span>
               </div>
             </div>
@@ -159,19 +181,19 @@ export default function LandingPage() {
               <div className="absolute w-72 h-72 bg-linear-to-tr from-indigo-500/30 via-violet-500/30 to-emerald-400/20 rounded-full blur-2xl"></div>
 
               {/* Phone Frame */}
-              <div className="relative w-full max-w-[330px] bg-white dark:bg-zinc-900 rounded-[2.5rem] border-4 border-zinc-200/80 dark:border-zinc-800 shadow-2xl p-5 space-y-4 z-10">
+              <div className="relative w-full max-w-[340px] bg-white dark:bg-zinc-900 rounded-[2.5rem] border-4 border-zinc-200/80 dark:border-zinc-800 shadow-2xl p-5 space-y-3.5 z-10">
                 {/* Notch / Speaker */}
                 <div className="w-16 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mx-auto"></div>
 
                 {/* Mockup Balance Card */}
-                <div className="bg-linear-to-br from-indigo-600 via-indigo-500 to-violet-600 text-white rounded-3xl p-5 shadow-lg shadow-indigo-600/20 relative overflow-hidden">
+                <div className="bg-linear-to-br from-indigo-600 via-indigo-500 to-violet-600 text-white rounded-3xl p-4 shadow-lg shadow-indigo-600/20 relative overflow-hidden">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-100">
                       ยอดเงินคงเหลือสุทธิ
                     </span>
                     <PiggyBank className="w-4 h-4 text-indigo-200" />
                   </div>
-                  <div className="text-2xl font-black tracking-tight mb-3">
+                  <div className="text-2xl font-black tracking-tight mb-2.5">
                     ฿48,950.00
                   </div>
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/15 text-[11px]">
@@ -196,22 +218,44 @@ export default function LandingPage() {
                   </div>
                 </div>
 
+                {/* Mockup Debt Summary Mini Cards */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/40 p-2.5">
+                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400">
+                      <ArrowDownLeft className="w-3 h-3" />
+                      <span>คนอื่นติดหนี้เรา</span>
+                    </div>
+                    <p className="text-sm font-black text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      ฿2,500
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/40 p-2.5">
+                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-rose-700 dark:text-rose-400">
+                      <ArrowUpRight className="w-3 h-3" />
+                      <span>เราติดหนี้คนอื่น</span>
+                    </div>
+                    <p className="text-sm font-black text-rose-700 dark:text-rose-400 mt-0.5">
+                      ฿500
+                    </p>
+                  </div>
+                </div>
+
                 {/* Live Slip Scanner Simulation Box */}
-                <div className="relative rounded-2xl bg-zinc-50 dark:bg-zinc-800/70 border border-indigo-200 dark:border-indigo-900/60 p-3.5 overflow-hidden">
+                <div className="relative rounded-2xl bg-zinc-50 dark:bg-zinc-800/70 border border-indigo-200 dark:border-indigo-900/60 p-3 overflow-hidden">
                   {/* Animated Laser Scan Beam */}
                   <div className="absolute left-0 right-0 h-0.5 bg-linear-to-r from-transparent via-indigo-500 to-transparent shadow-[0_0_8px_#6366f1] animate-scan-line"></div>
 
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10.5px] font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
                       <ScanLine className="w-3.5 h-3.5" />
                       กำลังสแกน 3 สลิปพร้อมกัน...
                     </span>
-                    <span className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                    <span className="text-[9.5px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
                       100%
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 text-[11px]">
+                  <div className="space-y-1 text-[10.5px]">
                     <div className="flex items-center justify-between py-1 px-2.5 rounded-xl bg-white dark:bg-zinc-900">
                       <span className="font-bold text-zinc-700 dark:text-zinc-200">1. ข้าวมันไก่</span>
                       <span className="font-black text-rose-500">-฿50.00</span>
@@ -220,130 +264,177 @@ export default function LandingPage() {
                       <span className="font-bold text-zinc-700 dark:text-zinc-200">2. กาแฟอเมซอน</span>
                       <span className="font-black text-rose-500">-฿65.00</span>
                     </div>
-                    <div className="flex items-center justify-between py-1 px-2.5 rounded-xl bg-white dark:bg-zinc-900">
-                      <span className="font-bold text-zinc-700 dark:text-zinc-200">3. เติมน้ำมัน</span>
-                      <span className="font-black text-rose-500">-฿500.00</span>
-                    </div>
                   </div>
                 </div>
 
                 {/* AI Chatbot Preview Bubble inside Phone */}
-                <div className="rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 p-3 space-y-2">
-                  <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">
-                    <Bot className="w-3.5 h-3.5" />
-                    <span>ผู้ช่วย AI ตอบกลับอัตโนมัติ</span>
+                <div className="rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 p-3 space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">
+                    <span className="flex items-center gap-1">
+                      <Bot className="w-3.5 h-3.5" />
+                      Money Manager AI
+                    </span>
+                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                      <Pin className="w-2.5 h-2.5 fill-current" /> ปักหมุดแชทได้
+                    </span>
                   </div>
-                  <p className="text-[11px] text-zinc-700 dark:text-zinc-300 font-medium leading-snug">
-                    “เปลี่ยนน้ำมันเครื่องล่าสุดเมื่อ <strong>15 ส.ค. 2569</strong> ยอด <strong>฿850</strong> ครับ”
+                  <p className="text-[10.5px] text-zinc-700 dark:text-zinc-300 font-medium leading-snug">
+                    “ตั้งแต่วันที่ 3 พ.ย. ถึงปัจจุบัน ใช้ไป <strong>฿1,420</strong> และมีลูกหนี้ค้างชำระ <strong>฿2,500</strong> ครับ”
                   </p>
                 </div>
               </div>
 
               {/* Floating Badge Top-Left */}
-              <div className="hidden sm:flex absolute -left-6 top-10 z-20 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-3 shadow-xl items-center gap-2.5 animate-float-slow">
+              <div className="hidden sm:flex absolute -left-6 top-8 z-20 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-3 shadow-xl items-center gap-2.5 animate-float-slow">
                 <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Layers className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-zinc-400">โหมดเหมารวมสลิป</p>
-                  <p className="text-xs font-black text-zinc-800 dark:text-zinc-100">รวม 3 ใบ = ฿615</p>
+                  <p className="text-xs font-black text-zinc-800 dark:text-zinc-100">แนบหลายใบในคลิกเดียว</p>
                 </div>
               </div>
 
               {/* Floating Badge Bottom-Right */}
-              <div className="hidden sm:flex absolute -right-6 bottom-12 z-20 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-3 shadow-xl items-center gap-2.5 animate-float-delayed">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                  <Users className="w-5 h-5" />
+              <div className="hidden sm:flex absolute -right-6 bottom-10 z-20 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-3 shadow-xl items-center gap-2.5 animate-float-delayed">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <PanelLeft className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-zinc-400">Family Account</p>
-                  <p className="text-xs font-black text-zinc-800 dark:text-zinc-100">แชร์กระเป๋าร่วมกันได้</p>
+                  <p className="text-[10px] font-bold text-zinc-400">Smart AI Sidebar</p>
+                  <p className="text-xs font-black text-zinc-800 dark:text-zinc-100">เปิดแชทเก่า & ปักหมุดได้</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ================= BENTO GRID FEATURES ================= */}
+        {/* ================= BENTO GRID FEATURES (6 CAPABILITIES) ================= */}
         <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
             <span className="text-xs font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-              Powerful Capabilities
+              All-In-One Financial Suite
             </span>
             <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-              ทำไมทุกคนถึงหลงรัก Money Manager?
+              ฟีเจอร์ครบเครื่องที่ระบบเรามีให้คุณตอนนี้
             </h2>
             <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-              ออกแบบมาเพื่อแก้ปัญหาคนขี้เกียจพิมพ์บันทึกรายการเอง ให้เรื่องเงินกลายเป็นเรื่องสนุกและง่ายที่สุด
+              ออกแบบมาให้ใช้งานง่าย รวดเร็ว และมี AI อัจฉริยะประจำตัวที่ช่วยดูแลทั้งรายรับ-รายจ่ายและหนี้สินของคุณ
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Feature 1: Multi-Slip OCR */}
-            <div className="group bg-white dark:bg-zinc-900 rounded-3xl p-7 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-indigo-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <ScanLine className="w-6 h-6" />
+            <div className="group bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-indigo-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <ScanLine className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
+                  1. สแกนหลายสลิปพร้อมกัน (Multi-Slip OCR)
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  แนบรูปสลิปธนาคารได้ทีละหลายใบ ระบบดึงยอดเงิน วันที่ และเวลาให้อัตโนมัติ เลือกได้ว่าจะ <strong>“เหมารวมยอดเป็น 1 รายการ”</strong> หรือ <strong>“บันทึกแยกทุกรายการ”</strong> ในคลิกเดียว
+                </p>
               </div>
-              <h3 className="text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
-                1. สแกนสลิปอัจฉริยะ & แนบหลายใบพร้อมกัน
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
-                ไม่ต้องกรอกยอดเงิน วันที่ หรือเวลาเองอีกต่อไป แค่อัปโหลดรูปสลิป (จะแนบทีละใบ หรือเลือกทีเดียว 5-10 ใบก็ได้) ระบบอ่านภาษาไทยและเลขอารบิก/เลขไทยได้แม่นยำทุกธนาคาร เลือกได้ว่าจะ <strong>“เหมารวมเป็น 1 รายการ”</strong> หรือ <strong>“บันทึกแยกทุกรายการในคลิกเดียว”</strong>
-              </p>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
                 <Zap className="w-3.5 h-3.5" />
-                <span>รองรับ กสิกร, ไทยพาณิชย์, กรุงไทย, กรุงเทพ, ttb, ออมสิน ฯลฯ</span>
+                <span>รองรับสลิปทุกธนาคารไทย</span>
               </div>
             </div>
 
-            {/* Feature 2: AI Financial Bot */}
-            <div className="group bg-white dark:bg-zinc-900 rounded-3xl p-7 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-violet-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Bot className="w-6 h-6" />
+            {/* Feature 2: Debt Management (Lent & Borrowed) */}
+            <div id="debt-ai" className="group bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-emerald-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
+                  2. สมุดบันทึกหนี้สิน (ลูกหนี้ & เจ้าหนี้)
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  ไม่ลืมว่าใครยืมเงินเรา หรือเรายืมเงินใคร! แยกการ์ดสรุปชัดเจนทั้ง <strong>“คนอื่นติดหนี้เรา (รอรับคืน)”</strong> และ <strong>“เราติดหนี้คนอื่น (ต้องจ่ายคืน)”</strong> พร้อมปุ่มกด <strong>ได้รับเงินคืนแล้ว / จ่ายหนี้คืนแล้ว</strong> ทันที
+                </p>
               </div>
-              <h3 className="text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
-                2. แชทบอท AI เลขาการเงินส่วนตัว
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
-                อยากรู้ว่าเคยจ่ายอะไรไปวันไหน ไม่ต้องเลื่อนหาเอง แค่พิมพ์ถามแชทบอท เช่น <em>“ผมกินข้าวผัดล่าสุดวันไหน”</em>, <em>“เปลี่ยนน้ำมันเครื่องล่าสุดเมื่อไหร่”</em> หรือ <em>“วันที่ 28 สิงหา ใช้ไปกี่บาท”</em> AI จะค้นหาคำตอบพร้อมรวมยอดให้ทันที
-              </p>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>ตั้งวันนัดคืนเงิน & กรองดูสถานะค้างชำระได้</span>
+              </div>
+            </div>
+
+            {/* Feature 3: Proprietary Smart AI Assistant */}
+            <div className="group bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-violet-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
+                  3. ผู้ช่วยการเงิน AI อัจฉริยะประจำตัวคุณ
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  มี AI ของระบบคอยเป็นเลขาส่วนตัว พิมพ์ถามด้วยภาษาพูดธรรมชาติได้เลย เช่น <em>“ตั้งแต่วันที่ 3 พ.ย. ถึงปัจจุบันใช้เงินไปเท่าไหร่”</em>, <em>“สรุปรายจ่ายเดือนตุลาคม”</em> หรือ <em>“ตอนนี้ใครติดหนี้ผมอยู่บ้าง”</em>
+                </p>
+              </div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>รองรับทั้งระบบ In-House NLP และ Google Gemini API</span>
+                <span>คิดวิเคราะห์และคำนวณจากข้อมูลจริงของคุณทันที</span>
               </div>
             </div>
 
-            {/* Feature 3: Family & Personal Mode */}
-            <div id="family" className="group bg-white dark:bg-zinc-900 rounded-3xl p-7 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-emerald-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Users className="w-6 h-6" />
+            {/* Feature 4: Smart Chat Sidebar & Pin/Delete */}
+            <div className="group bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-indigo-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <PanelLeft className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
+                  4. ระบบแยกห้องแชท AI (Sidebar & ปักหมุด)
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  เข้ามาคุยรอบใหม่ได้สะอาดตาไม่รกยาว และสามารถเปิด <strong>Sidebar ประวัติแชท</strong> เพื่อกลับไปดูหรือคุยต่อจากแชทเก่าได้ตลอดเวลา พร้อมปุ่ม 3 จุด (`⋮`) สำหรับ <strong>📌 ปักหมุดแชทสำคัญ</strong> หรือ <strong>🗑️ ลบแชททั้งรอบ</strong>
+                </p>
               </div>
-              <h3 className="text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
-                3. แยกกระเป๋าส่วนตัว หรือแชร์ร่วมกันในครอบครัว (Family)
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
-                สมัครสมาชิกใหม่เพื่อใช้กระเป๋าเงินส่วนตัวที่ปลอดภัยและแยกข้อมูลเป็นอิสระ 100% หรือเพิ่มบัญชีสมาชิกในครอบครัวเพื่อช่วยกันบันทึกรายรับ-รายจ่ายเข้ากองกลางเดียวกันได้อย่างลงตัว
-              </p>
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                <Pin className="w-3.5 h-3.5" />
+                <span>จัดการประวัติการคุยกับ AI ได้เป็นระเบียบที่สุด</span>
+              </div>
+            </div>
+
+            {/* Feature 5: Family & Personal Mode */}
+            <div id="family" className="group bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-rose-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
+                  5. บัญชีส่วนตัว 100% หรือแชร์กระเป๋าครอบครัว
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  ข้อมูลรายรับ-รายจ่าย หนี้สิน และประวัติแชท AI ถูกผูกแยกตามบัญชีผู้ใช้อย่างปลอดภัย หรือสามารถเพิ่มสมาชิกครอบครัว (Family Shared Wallet) เพื่อช่วยกันจดบันทึกเข้ากระเป๋ากลางเดียวกันได้
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
                 <Lock className="w-3.5 h-3.5" />
-                <span>ปกป้องข้อมูลด้วยระบบ JWT Session นาน 7 วัน</span>
+                <span>ปลอดภัยด้วย JWT Session & ข้อมูลไม่ปะปนกัน</span>
               </div>
             </div>
 
-            {/* Feature 4: Visual Analytics */}
-            <div className="group bg-white dark:bg-zinc-900 rounded-3xl p-7 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-6 h-6" />
+            {/* Feature 6: Visual Analytics */}
+            <div className="group bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200/70 dark:border-zinc-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-lg shadow-zinc-900/5 hover:-translate-y-1 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
+                  6. กราฟวิเคราะห์สถิติ รายวัน / รายเดือน / รายปี
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  ดูภาพรวมสุขภาพการเงินแบบเรียลไทม์ แยกสัดส่วนตามหมวดหมู่ (อาหาร, เดินทาง, ช้อปปิ้ง, บันเทิง, ค่าบ้าน ฯลฯ) พร้อมเปอร์เซ็นต์เปรียบเทียบ รองรับทุกขนาดหน้าจอ
+                </p>
               </div>
-              <h3 className="text-lg font-extrabold mb-2 text-zinc-900 dark:text-white">
-                4. กราฟสรุปสถิติ รายวัน / รายเดือน / รายปี
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
-                เห็นภาพรวมสุขภาพทางการเงินของคุณอย่างชัดเจน แบ่งสัดส่วนตามหมวดหมู่ (อาหาร, เดินทาง, ช้อปปิ้ง, ค่าบ้าน ฯลฯ) พร้อมเปอร์เซ็นต์เปรียบเทียบให้วางแผนใช้เงินได้ดียิ่งขึ้น
-              </p>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>รองรับทุกหน้าจอ ทั้งมือถือ แท็บเล็ต และคอมพิวเตอร์</span>
+                <span>Responsive 100% ทั้งมือถือ แท็บเล็ต และ PC</span>
               </div>
             </div>
           </div>
@@ -368,7 +459,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-base font-extrabold">สมัครสมาชิกฟรี</h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  ตั้งชื่อผู้ใช้และรหัสผ่านของคุณ ใช้เวลาไม่ถึง 10 วินาที ระบบสร้างกระเป๋าเงินส่วนตัวให้ทันที
+                  ตั้งชื่อผู้ใช้และรหัสผ่านของคุณ ใช้เวลาไม่ถึง 10 วินาที ระบบสร้างกระเป๋าเงินและสมุดหนี้สินส่วนตัวให้ทันที
                 </p>
               </div>
 
@@ -376,9 +467,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-2xl bg-violet-600 text-white font-black text-lg flex items-center justify-center mx-auto shadow-lg shadow-violet-600/30">
                   2
                 </div>
-                <h3 className="text-base font-extrabold">สแกนสลิปหรือจดรายการ</h3>
+                <h3 className="text-base font-extrabold">โยนสลิป หรือจดหนี้สิน</h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  เลือกรูปสลิปใบเดียวหรือหลายใบพร้อมกัน ระบบดึงยอดเงินและวันที่ให้อัตโนมัติแบบไม่ต้องพิมพ์เอง
+                  แนบสลิปหลายใบพร้อมกันเพื่อจดรายรับ-รายจ่าย หรือบันทึกยอดลูกหนี้/เจ้าหนี้พร้อมกดรับเงินคืนได้ในคลิกเดียว
                 </p>
               </div>
 
@@ -386,9 +477,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white font-black text-lg flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/30">
                   3
                 </div>
-                <h3 className="text-base font-extrabold">ดูกราฟ & ถาม AI ได้ตลอด</h3>
+                <h3 className="text-base font-extrabold">คุยกับ AI ผู้ช่วยส่วนตัวได้ตลอด</h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  ตรวจสอบยอดเงินคงเหลือ ดูกราฟรายเดือน หรือพิมพ์ถามแชทบอท AI ได้ทุกเมื่อที่ต้องการ
+                  พิมพ์ถามยอดใช้จ่ายย้อนหลังหรือยอดหนี้คงค้างกับ AI ของระบบได้ตามใจชอบ พร้อมเปิด Sidebar ดูประวัติแชทเก่าและปักหมุดได้ทันที
                 </p>
               </div>
             </div>
@@ -404,10 +495,10 @@ export default function LandingPage() {
 
             <div className="relative z-10 max-w-2xl mx-auto space-y-5">
               <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-                พร้อมเริ่มต้นบริหารเงินอย่างชาญฉลาดหรือยัง?
+                พร้อมเริ่มต้นบริหารเงินและหนี้สินอย่างชาญฉลาดหรือยัง?
               </h2>
               <p className="text-xs sm:text-sm text-indigo-100 leading-relaxed">
-                สร้างบัญชีส่วนตัวของคุณวันนี้ ฟรีทุกฟีเจอร์ ทั้งสแกนหลายสลิปและแชทบอท AI อัจฉริยะ
+                สร้างบัญชีส่วนตัวของคุณวันนี้ ฟรีทุกฟีเจอร์ ทั้งสแกนหลายสลิป สมุดหนี้สิน และผู้ช่วย AI การเงินส่วนตัวของคุณ
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
                 <Link
@@ -435,7 +526,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold text-zinc-600 dark:text-zinc-400">
             <PiggyBank className="w-4 h-4 text-indigo-500" />
-            <span>Money Manager • Smart AI Expense Tracker</span>
+            <span>Money Manager • Smart AI Finance & Debt Tracker</span>
           </div>
           <p>© {new Date().getFullYear() + 543} Money Manager. All rights reserved.</p>
         </div>

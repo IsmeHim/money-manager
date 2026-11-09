@@ -178,7 +178,7 @@ export default function ChatSidebar({
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-indigo-500" />
             <span className="text-xs font-extrabold text-zinc-800 dark:text-zinc-100">
-              ประวัติการแชท (Gemini Style)
+              ประวัติการแชท AI
             </span>
           </div>
           <button

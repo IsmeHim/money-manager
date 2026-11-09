@@ -29,7 +29,7 @@ const QUICK_CHIPS = [
 const WELCOME_MSG = {
   id: "welcome",
   sender: "bot",
-  text: `สวัสดีครับ! ผมคือผู้ช่วยการเงินส่วนตัวของคุณ 🤖✨\n\nคุณสามารถพิมพ์ถามคำถามจากข้อมูลบัญชีของคุณได้เลย เช่น:\n• "ตั้งแต่วันที่ 3 พ.ย. ถึงปัจจุบันผมใช้เงินไปเท่าไหร่"\n• "สรุปรายจ่ายเดือนตุลาคมให้หน่อย"\n• "ผมกินข้าวผัดเผ็ดล่าสุดวันไหน"\n• "ตอนนี้ใครติดหนี้ผมอยู่บ้าง"\nหรือแตะปุ่มเมด้านซ้ายบนเพื่อเปิดดูแชทเก่าได้เหมือน Gemini เลยครับ!`,
+  text: `สวัสดีครับ! ผมคือผู้ช่วย AI การเงินส่วนตัวของคุณ 🤖✨\n\nคุณสามารถพิมพ์ถามคำถามจากข้อมูลบัญชีของคุณได้เลย เช่น:\n• "ตั้งแต่วันที่ 3 พ.ย. ถึงปัจจุบันผมใช้เงินไปเท่าไหร่"\n• "สรุปรายจ่ายเดือนตุลาคมให้หน่อย"\n• "ผมกินข้าวผัดเผ็ดล่าสุดวันไหน"\n• "ตอนนี้ใครติดหนี้ผมอยู่บ้าง"\nหรือแตะปุ่มเมนูด้านซ้ายบนเพื่อเปิดดูประวัติแชทเก่าได้ตลอดเวลาครับ!`,
   time: "",
 };
 
@@ -310,7 +310,7 @@ export default function FinancialChatbotModal({ currentUser }) {
                   <h3 className="text-xs sm:text-sm font-extrabold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">
                     <span className="truncate">AI ผู้ช่วยการเงิน</span>
                     <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full shrink-0">
-                      Gemini
+                      Smart AI
                     </span>
                   </h3>
                   <p className="text-[10.5px] text-zinc-400 truncate max-w-[180px] sm:max-w-[230px]">
@@ -378,8 +378,7 @@ export default function FinancialChatbotModal({ currentUser }) {
                         {isBot && msg.usedModel ? (
                           <span className="text-[9px] font-mono font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1">
                             <Sparkles className="w-2.5 h-2.5" />
-                            {msg.usedModel}
-                            {msg.fallbackUsed ? " (Auto-Fallback)" : ""}
+                            Money Manager AI
                           </span>
                         ) : (
                           <span />
