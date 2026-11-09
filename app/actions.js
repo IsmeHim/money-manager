@@ -334,13 +334,6 @@ export async function askFinancialBot(userMessage) {
       };
     }
 
-    const { parseFinancialQuery, generateChatResponse } = await import("@/lib/chatEngine");
-    const { generateGeminiFinancialAnswer, buildUserFinancialContext } = await import(
-      "@/lib/geminiService"
-    );
-
-    const parsed = parseFinancialQuery(userMessage);
-
     const client = await clientPromise;
     const db = client.db();
     const collection = db.collection("transactions");
@@ -358,60 +351,27 @@ export async function askFinancialBot(userMessage) {
           }
         : { username: targetUsername };
 
-    // Build targeted filter from NLP query
-    let query = {};
-    if (parsed.searchKeyword) {
-      const escapedKw = parsed.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const conditions = [
-        { description: { $regex: escapedKw, $options: "i" } },
-        { category: { $regex: escapedKw, $options: "i" } },
-      ];
-
-      if (
-        parsed.searchKeyword === "ข้าว" ||
-        parsed.searchKeyword === "อาหาร" ||
-        parsed.searchKeyword === "กินข้าว" ||
-        parsed.searchKeyword === "กับข้าว"
-      ) {
-        conditions.push({ category: "อาหาร" });
-        conditions.push({ description: { $regex: "ข้า", $options: "i" } });
-      }
-
-      const keywordFilter = { $or: conditions };
-
-      if (parsed.timeFilter && Object.keys(parsed.timeFilter).length > 0) {
-        query = { $and: [keywordFilter, parsed.timeFilter] };
-      } else {
-        query = keywordFilter;
-      }
-    } else {
-      query = parsed.timeFilter || {};
-    }
-
-    const finalMatchedQuery =
-      Object.keys(query).length > 0 ? { $and: [query, userScope] } : userScope;
-
-    const [rawMatched, rawAllUserTx, aiConfigDoc] = await Promise.all([
-      collection.find(finalMatchedQuery).sort({ dateStr: -1, createdAt: -1 }).toArray(),
+    const [rawAllUserTx, aiConfigDoc] = await Promise.all([
       collection.find(userScope).sort({ dateStr: -1, createdAt: -1 }).toArray(),
       db.collection("system_settings").findOne({ key: "ai_config" }),
     ]);
 
-    const matchedTransactions = rawMatched.map(serializeDoc);
     const allUserTransactions = rawAllUserTx.map(serializeDoc);
 
-    // Check if Super Admin enabled Gemini AI and configured an API Key
+    // 1. Primary Brain: Let Google Gemini think and understand the question directly over the user's full dataset
     const hasGeminiKey = Boolean(
       (aiConfigDoc?.apiKey && aiConfigDoc.apiKey.trim()) || process.env.GEMINI_API_KEY
     );
 
     if (aiConfigDoc?.isEnabled && hasGeminiKey) {
+      const { generateGeminiFinancialAnswer, buildUserFinancialContext } = await import(
+        "@/lib/geminiService"
+      );
+
       const userContextText = buildUserFinancialContext({
         currentUser,
         walletOwner: targetUsername,
         allUserTransactions,
-        matchedTransactions,
-        parsedQuery: parsed,
       });
 
       const geminiRes = await generateGeminiFinancialAnswer({
@@ -432,15 +392,51 @@ export async function askFinancialBot(userMessage) {
       }
     }
 
-    // Fallback to fast built-in Smart Thai NLP Engine (strictly using this user's transactions)
-    const response = generateChatResponse(
+    // 2. Offline Fallback Only (if Gemini is disabled by Admin or all API keys/models are down)
+    const { parseFinancialQuery, generateChatResponse } = await import("@/lib/chatEngine");
+    const parsed = parseFinancialQuery(userMessage);
+
+    let query = {};
+    if (parsed.searchKeyword) {
+      const escapedKw = parsed.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const conditions = [
+        { description: { $regex: escapedKw, $options: "i" } },
+        { category: { $regex: escapedKw, $options: "i" } },
+      ];
+      if (
+        parsed.searchKeyword === "ข้าว" ||
+        parsed.searchKeyword === "อาหาร" ||
+        parsed.searchKeyword === "กินข้าว" ||
+        parsed.searchKeyword === "กับข้าว"
+      ) {
+        conditions.push({ category: "อาหาร" });
+        conditions.push({ description: { $regex: "ข้า", $options: "i" } });
+      }
+      const keywordFilter = { $or: conditions };
+      query =
+        parsed.timeFilter && Object.keys(parsed.timeFilter).length > 0
+          ? { $and: [keywordFilter, parsed.timeFilter] }
+          : keywordFilter;
+    } else {
+      query = parsed.timeFilter || {};
+    }
+
+    const finalMatchedQuery =
+      Object.keys(query).length > 0 ? { $and: [query, userScope] } : userScope;
+    const rawMatched = await collection
+      .find(finalMatchedQuery)
+      .sort({ dateStr: -1, createdAt: -1 })
+      .toArray();
+    const matchedTransactions = rawMatched.map(serializeDoc);
+
+    const directComputedAnswer = generateChatResponse(
       parsed,
       parsed.intent === "greeting" ? [] : matchedTransactions
     );
 
     return {
       success: true,
-      response,
+      response: directComputedAnswer,
       usedModel: "Smart Local NLP",
       fallbackUsed: false,
       source: "local",
