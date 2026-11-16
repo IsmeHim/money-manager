@@ -224,8 +224,15 @@ export default function Home() {
   const handleAddDebt = async (debtData) => {
     const res = await addDebt(debtData);
     if (res.success) {
-      showFeedback("บันทึกรายการหนี้สำเร็จแล้ว!");
+      showFeedback(
+        debtData.syncWithWallet
+          ? "บันทึกรายการหนี้และอัปเดตยอดกระเป๋าเงินหลักแล้ว!"
+          : "บันทึกรายการหนี้สำเร็จแล้ว!"
+      );
       fetchDebts();
+      if (debtData.syncWithWallet) {
+        fetchData();
+      }
       return true;
     } else {
       showFeedback("บันทึกไม่สำเร็จ: " + res.error, "error");
@@ -238,6 +245,7 @@ export default function Home() {
     if (res.success) {
       showFeedback(markAsPaid ? "อัปเดตสถานะเป็นชำระแล้ว!" : "เปลี่ยนกลับเป็นค้างชำระแล้ว");
       fetchDebts();
+      fetchData();
     } else {
       showFeedback("อัปเดตไม่สำเร็จ: " + res.error, "error");
     }
@@ -249,6 +257,7 @@ export default function Home() {
       if (res.success) {
         showFeedback("ลบรายการหนี้เรียบร้อยแล้ว");
         fetchDebts();
+        fetchData();
       } else {
         showFeedback("ลบไม่สำเร็จ: " + res.error, "error");
       }

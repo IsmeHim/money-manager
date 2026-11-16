@@ -12,6 +12,7 @@ import {
   User,
   AlertCircle,
   Clock,
+  Wallet,
 } from "lucide-react";
 import { formatThaiDate } from "@/lib/dateFormatter";
 
@@ -182,6 +183,12 @@ export default function DebtSection({
                         >
                           {isLent ? "ติดหนี้เรา" : "เราติดหนี้เขา"}
                         </span>
+                        {debt.syncWithWallet && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                            <Wallet className="w-2.5 h-2.5" />
+                            เชื่อมกระเป๋าหลัก
+                          </span>
+                        )}
                         {isPaid && (
                           <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
                             ✓ จ่ายแล้ว

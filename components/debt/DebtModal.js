@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Calendar, User, AlignLeft, Check, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { X, Calendar, User, AlignLeft, Check, ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 
 export default function DebtModal({ isOpen, onClose, onSave }) {
   const todayDefault = new Date().toLocaleDateString("sv-SE");
@@ -11,6 +11,7 @@ export default function DebtModal({ isOpen, onClose, onSave }) {
   const [note, setNote] = useState("");
   const [dateStr, setDateStr] = useState(todayDefault);
   const [dueDateStr, setDueDateStr] = useState("");
+  const [syncWithWallet, setSyncWithWallet] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,6 +39,7 @@ export default function DebtModal({ isOpen, onClose, onSave }) {
         note: note.trim(),
         dateStr,
         dueDateStr,
+        syncWithWallet,
       });
       if (ok) {
         setPersonName("");
@@ -202,6 +204,31 @@ export default function DebtModal({ isOpen, onClose, onSave }) {
               />
             </div>
           </div>
+
+          {/* Sync With Main Wallet Checkbox */}
+          <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/25 border border-indigo-200/70 dark:border-indigo-900/40 cursor-pointer select-none transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-950/35">
+            <input
+              type="checkbox"
+              checked={syncWithWallet}
+              onChange={(e) => setSyncWithWallet(e.target.checked)}
+              className="mt-0.5 w-4.5 h-4.5 rounded-md accent-indigo-600 cursor-pointer shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-indigo-900 dark:text-indigo-200">
+                <Wallet className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span>
+                  {direction === "lent"
+                    ? "หักยอดจากกระเป๋าเงินหลักอัตโนมัติ"
+                    : "บวกยอดเข้ากระเป๋าเงินหลักอัตโนมัติ"}
+                </span>
+              </div>
+              <p className="text-[10.5px] text-indigo-700/80 dark:text-indigo-300/75 mt-0.5 leading-snug">
+                {direction === "lent"
+                  ? "หักออกจากยอดเงินคงเหลือตอนนี้ และบวกกลับเข้ากระเป๋าเมื่อกด 'ได้รับเงินคืนแล้ว'"
+                  : "บวกเข้ายอดเงินคงเหลือตอนนี้ และหักออกเมื่อกด 'จ่ายหนี้คืนแล้ว'"}
+              </p>
+            </div>
+          </label>
 
           {/* Submit */}
           <button

@@ -92,13 +92,15 @@ export async function addDebt(data) {
       return { success: false, error: "กรุณาเข้าสู่ระบบก่อนบันทึกรายการหนี้" };
     }
 
-    const { direction, personName, amount, note, dateStr, dueDateStr } = data;
+    const { direction, personName, amount, note, dateStr, dueDateStr, syncWithWallet } = data;
     if (!direction || !personName || !amount || !dateStr) {
       return { success: false, error: "กรุณากรอกชื่อ จำนวนเงิน และวันที่ให้ครบถ้วน" };
     }
 
     const walletOwner =
       currentUser.walletOwner || currentUser.familyGroup || currentUser.username;
+    const numericAmount = parseFloat(amount);
+    const shouldSync = Boolean(syncWithWallet);
 
     const client = await clientPromise;
     const db = client.db();
@@ -107,21 +109,50 @@ export async function addDebt(data) {
     const newDebt = {
       direction: direction === "borrowed" ? "borrowed" : "lent", // 'lent' = คนติดหนี้เรา, 'borrowed' = เราติดหนี้คนอื่น
       personName: personName.trim(),
-      amount: parseFloat(amount),
+      amount: numericAmount,
       note: (note || "").trim(),
       dateStr,
       dueDateStr: dueDateStr || "",
       status: "unpaid", // 'unpaid' | 'paid'
       paidDateStr: "",
       paidAt: null,
+      syncWithWallet: shouldSync,
       username: walletOwner,
       recordedBy: currentUser.displayName || currentUser.username,
       createdAt: new Date(),
     };
 
     const result = await collection.insertOne(newDebt);
+    const debtIdStr = result.insertedId.toString();
+
+    // If user checked "syncWithWallet", automatically deduct/add to main wallet transactions
+    if (shouldSync && !isNaN(numericAmount) && numericAmount > 0) {
+      const nowTimeStr = new Date().toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const isLent = newDebt.direction === "lent";
+      const noteSuffix = newDebt.note ? ` (${newDebt.note})` : "";
+
+      await db.collection("transactions").insertOne({
+        type: isLent ? "expense" : "income",
+        amount: numericAmount,
+        category: isLent ? "ให้ยืมเงิน" : "ยืมเงิน",
+        description: isLent
+          ? `ให้ ${newDebt.personName} ยืมเงิน${noteSuffix}`
+          : `ยืมเงินจาก ${newDebt.personName}${noteSuffix}`,
+        dateStr,
+        timeStr: nowTimeStr,
+        username: walletOwner,
+        recordedBy: currentUser.displayName || currentUser.username,
+        linkedDebtId: debtIdStr,
+        debtEvent: "created",
+        createdAt: new Date(),
+      });
+    }
+
     revalidatePath("/");
-    return { success: true, id: result.insertedId.toString() };
+    return { success: true, id: debtIdStr };
   } catch (error) {
     console.error("Error adding debt:", error);
     return { success: false, error: error.message };
@@ -142,6 +173,14 @@ export async function toggleDebtPaid(id, markAsPaid = true) {
     const client = await clientPromise;
     const db = client.db();
     const collection = db.collection("debts");
+    const txCol = db.collection("transactions");
+
+    const existingDebt = await collection.findOne({
+      $and: [{ _id: new ObjectId(id) }, userScope],
+    });
+    if (!existingDebt) {
+      return { success: false, error: "ไม่พบรายการหนี้ที่ต้องการอัปเดต" };
+    }
 
     const todayStr = new Date().toLocaleDateString("sv-SE");
     const updateFields = markAsPaid
@@ -160,6 +199,47 @@ export async function toggleDebtPaid(id, markAsPaid = true) {
       { $and: [{ _id: new ObjectId(id) }, userScope] },
       { $set: updateFields }
     );
+
+    // Sync settlement with main wallet if this debt is linked to wallet balance
+    if (existingDebt.syncWithWallet) {
+      if (markAsPaid) {
+        const existingSettledTx = await txCol.findOne({
+          linkedDebtId: id,
+          debtEvent: "settled",
+        });
+
+        if (!existingSettledTx) {
+          const nowTimeStr = new Date().toLocaleTimeString("th-TH", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          const isLent = existingDebt.direction === "lent";
+          const noteSuffix = existingDebt.note ? ` (${existingDebt.note})` : "";
+
+          await txCol.insertOne({
+            type: isLent ? "income" : "expense",
+            amount: parseFloat(existingDebt.amount),
+            category: isLent ? "รับคืนหนี้" : "จ่ายคืนหนี้",
+            description: isLent
+              ? `ได้รับเงินคืนจาก ${existingDebt.personName}${noteSuffix}`
+              : `จ่ายหนี้คืนให้ ${existingDebt.personName}${noteSuffix}`,
+            dateStr: todayStr,
+            timeStr: nowTimeStr,
+            username: targetUsername,
+            recordedBy: currentUser.displayName || currentUser.username,
+            linkedDebtId: id,
+            debtEvent: "settled",
+            createdAt: new Date(),
+          });
+        }
+      } else {
+        // Revert settlement transaction when changing back to unpaid
+        await txCol.deleteMany({
+          linkedDebtId: id,
+          debtEvent: "settled",
+        });
+      }
+    }
 
     revalidatePath("/");
     return { success: true };
@@ -186,6 +266,11 @@ export async function deleteDebt(id) {
 
     await collection.deleteOne({
       $and: [{ _id: new ObjectId(id) }, userScope],
+    });
+
+    // Clean up any auto-created wallet transactions linked to this debt
+    await db.collection("transactions").deleteMany({
+      linkedDebtId: id,
     });
 
     revalidatePath("/");
