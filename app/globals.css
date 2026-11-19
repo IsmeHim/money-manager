@@ -47,10 +47,30 @@
   }
 }
 
+html,
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Prevent iOS Safari from auto-zooming when focusing inputs smaller than 16px */
+@media screen and (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not(.text-3xl):not(.text-2xl),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 /* Hide scrollbars for chrome/safari/firefox */

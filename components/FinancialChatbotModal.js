@@ -93,9 +93,9 @@ export default function FinancialChatbotModal({ currentUser }) {
     }
   }, [messages, isOpen]);
 
-  // Focus input when opened or switching sessions
+  // Focus input when opened or switching sessions (desktop only so iOS keyboard doesn't pop up automatically)
   useEffect(() => {
-    if (isOpen && !sidebarOpen) {
+    if (isOpen && !sidebarOpen && typeof window !== "undefined" && window.innerWidth >= 768) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen, sidebarOpen, activeSessionId]);
