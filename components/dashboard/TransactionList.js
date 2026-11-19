@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertCircle, Trash2 } from "lucide-react";
+import { AlertCircle, Trash2, Loader2 } from "lucide-react";
 import CategoryIcon from "@/components/CategoryIcon";
 import { formatThaiDate } from "@/lib/dateFormatter";
 
@@ -17,18 +17,16 @@ export default function TransactionList({
           ประวัติรายการ
         </h3>
         <span className="text-[10.5px] font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-2.5 py-1 rounded-full">
-          {transactions.length} รายการ
+          {loading ? "กำลังโหลด..." : `${transactions.length} รายการ`}
         </span>
       </div>
 
       {loading ? (
-        <div className="space-y-2.5">
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 animate-pulse w-full"
-            />
-          ))}
+        <div className="py-12 bg-zinc-50/50 dark:bg-zinc-900/20 rounded-3xl border border-zinc-100 dark:border-zinc-800/60 flex flex-col items-center justify-center gap-3 text-zinc-400 dark:text-zinc-500">
+          <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
+          <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 animate-pulse">
+            กำลังโหลดข้อมูลของช่วงเวลานี้...
+          </span>
         </div>
       ) : transactions.length === 0 ? (
         <div className="text-center py-10 bg-zinc-50/50 dark:bg-zinc-900/10 rounded-2.5rem border border-dashed border-zinc-100 dark:border-zinc-900 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">

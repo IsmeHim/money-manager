@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus,
   ChevronLeft,
@@ -45,6 +45,9 @@ export default function Home() {
   const [debtSummary, setDebtSummary] = useState(null);
   const [debtLoading, setDebtLoading] = useState(false);
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
+
+  // Track latest request ID so rapid date shifts never show stale intermediate days
+  const fetchReqIdRef = useRef(0);
 
   // Load authenticated session
   useEffect(() => {
@@ -101,21 +104,26 @@ export default function Home() {
     }, 4000);
   }, []);
 
-  // Fetch data only when authenticated user is present
+  // Fetch data only when authenticated user is present (guarded against stale out-of-order responses)
   const fetchData = useCallback(async () => {
     if (!selectedDate || !currentUser) return;
+    const reqId = ++fetchReqIdRef.current;
     setLoading(true);
     try {
       const res = await getDashboardData(view, selectedDate);
+      if (reqId !== fetchReqIdRef.current) return;
       if (res.success) {
         setData(res);
       } else {
         showFeedback("ดึงข้อมูลไม่สำเร็จ: " + res.error, "error");
       }
     } catch {
+      if (reqId !== fetchReqIdRef.current) return;
       showFeedback("เกิดข้อผิดพลาดในการเชื่อมต่อ", "error");
     } finally {
-      setLoading(false);
+      if (reqId === fetchReqIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [view, selectedDate, currentUser, showFeedback]);
 
@@ -135,16 +143,26 @@ export default function Home() {
     }
   }, [currentUser]);
 
+  // Debounce dashboard data fetch when rapidly shifting dates so intermediate days don't flash
+  useEffect(() => {
+    if (!currentUser || !selectedDate) return;
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 260);
+    return () => clearTimeout(timer);
+  }, [currentUser, selectedDate, view, fetchData]);
+
   useEffect(() => {
     if (currentUser) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchData();
       fetchDebts();
     }
-  }, [currentUser, fetchData, fetchDebts]);
+  }, [currentUser, fetchDebts]);
 
   // View change handler
   const handleViewChange = (newView) => {
+    fetchReqIdRef.current += 1;
+    setLoading(true);
     setView(newView);
     const today = new Date();
     const year = today.getFullYear();
@@ -163,6 +181,8 @@ export default function Home() {
   // Date Shift Handler
   const handleDateShift = (amount) => {
     if (!selectedDate) return;
+    fetchReqIdRef.current += 1;
+    setLoading(true);
 
     if (view === "daily") {
       const parts = selectedDate.split("-");
