@@ -195,7 +195,16 @@ export default function SlipScannerModal({
     setIsSavingBatch(true);
     try {
       if (onBatchSave) {
-        const success = await onBatchSave(batchItems);
+        const payload = batchItems.map((item) => ({
+          type: item.type || "expense",
+          amount: item.amount,
+          category: item.category || "อาหาร",
+          description: (item.memo ?? item.description ?? "").trim(),
+          memo: (item.memo ?? item.description ?? "").trim(),
+          dateStr: item.dateStr,
+          timeStr: item.timeStr,
+        }));
+        const success = await onBatchSave(payload);
         if (success) {
           handleReset();
           onClose();

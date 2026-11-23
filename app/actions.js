@@ -77,7 +77,7 @@ export async function addBatchTransactions(items) {
         type: data.type || "expense",
         amount: amt,
         category: data.category || "อาหาร",
-        description: data.description || "",
+        description: (data.description ?? data.memo ?? "").trim(),
         dateStr: data.dateStr || new Date().toLocaleDateString("sv-SE"),
         timeStr: data.timeStr || "00:00",
         username: walletOwner,
