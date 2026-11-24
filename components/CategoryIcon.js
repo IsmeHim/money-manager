@@ -64,11 +64,27 @@ export const CATEGORY_MAP = {
   },
   "ของขวัญ": {
     icon: Gift,
-    color: "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
+    color: "bg-violet-100 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400",
   },
   "รายรับอื่นๆ": {
     icon: Coins,
     color: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+  },
+  "รับคืนหนี้": {
+    icon: Coins,
+    color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+  },
+  "ยืมเงิน": {
+    icon: Coins,
+    color: "bg-teal-100 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400",
+  },
+  "ให้ยืมเงิน": {
+    icon: Coins,
+    color: "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
+  },
+  "จ่ายคืนหนี้": {
+    icon: Receipt,
+    color: "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
   },
 };
 

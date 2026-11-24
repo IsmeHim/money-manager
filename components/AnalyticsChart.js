@@ -38,19 +38,59 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius; // ~314.159
 
-  // Assign distinct aesthetic colors to categories
-  const donutColors = [
-    "#f43f5e", // rose (อาหาร / อันดับ 1)
-    "#3b82f6", // blue (อันดับ 2)
-    "#a855f7", // purple (อันดับ 3)
-    "#f59e0b", // amber (อันดับ 4)
-    "#ec4899", // pink (อันดับ 5)
-    "#10b981", // emerald (อันดับ 6)
-    "#6366f1", // indigo (อันดับ 7)
-    "#14b8a6", // teal (อันดับ 8)
-    "#06b6d4", // cyan (อันดับ 9)
-    "#84cc16", // lime (อันดับ 10)
+  // Fixed signature colors per category (Income = Green/Cyan/Teal/Gold tones, Expense = Rose/Blue/Purple/Amber/Pink/Indigo)
+  const CATEGORY_COLORS = {
+    // Income Categories
+    "เงินเดือน": "#10b981", // emerald
+    "ธุรกิจ": "#06b6d4", // cyan
+    "ลงทุน": "#14b8a6", // teal
+    "รายรับอื่นๆ": "#f59e0b", // amber gold
+    "ของขวัญ": "#8b5cf6", // violet
+    "รับคืนหนี้": "#22c55e", // green
+    "ยืมเงิน": "#34d399", // light emerald
+
+    // Expense Categories
+    "อาหาร": "#f43f5e", // rose
+    "เดินทาง": "#3b82f6", // blue
+    "ช้อปปิ้ง": "#a855f7", // purple
+    "ค่าบ้าน/บิล": "#f59e0b", // amber
+    "ความบันเทิง": "#ec4899", // pink
+    "การศึกษา": "#6366f1", // indigo
+    "สุขภาพ": "#10b981", // emerald
+    "ให้ยืมเงิน": "#fb7185", // coral rose
+    "จ่ายคืนหนี้": "#e11d48", // crimson
+    "อื่นๆ": "#64748b", // slate
+  };
+
+  const EXPENSE_FALLBACK_COLORS = [
+    "#f43f5e",
+    "#3b82f6",
+    "#a855f7",
+    "#f59e0b",
+    "#ec4899",
+    "#6366f1",
+    "#10b981",
+    "#64748b",
   ];
+
+  const INCOME_FALLBACK_COLORS = [
+    "#10b981",
+    "#06b6d4",
+    "#14b8a6",
+    "#f59e0b",
+    "#8b5cf6",
+    "#22c55e",
+    "#3b82f6",
+  ];
+
+  const getCategoryColor = (item, idx) => {
+    if (item?.category && CATEGORY_COLORS[item.category]) {
+      return CATEGORY_COLORS[item.category];
+    }
+    const palette =
+      breakdownType === "income" ? INCOME_FALLBACK_COLORS : EXPENSE_FALLBACK_COLORS;
+    return palette[idx % palette.length];
+  };
 
   const handleToggleType = (type) => {
     setBreakdownType(type);
@@ -197,7 +237,7 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
                   const gap = filteredBreakdown.length > 1 ? Math.min(1.5, exactArcLength * 0.25) : 0;
                   const visibleLength = Math.max(exactArcLength - gap, 1.5);
                   const strokeOffset = -previousArcLength;
-                  const color = donutColors[idx % donutColors.length];
+                  const color = getCategoryColor(item, idx);
                   const isSelected = selectedIdx === idx;
                   const isDimmed = selectedIdx !== null && !isSelected;
 
@@ -233,7 +273,7 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
                     <span
                       className="text-[10.5px] font-extrabold truncate max-w-[85px]"
                       style={{
-                        color: donutColors[selectedIdx % donutColors.length],
+                        color: getCategoryColor(activeItem, selectedIdx),
                       }}
                     >
                       {activeItem.category}
@@ -264,7 +304,7 @@ export default function AnalyticsChart({ chartData = [], categoryBreakdown = [],
             {/* List labels with Mini Progress Bars */}
             <div className="space-y-2.5">
               {filteredBreakdown.map((item, idx) => {
-                const color = donutColors[idx % donutColors.length];
+                const color = getCategoryColor(item, idx);
                 const rawPct = (item.amount / totalAmount) * 100;
                 const displayPct =
                   rawPct > 0 && rawPct < 1
