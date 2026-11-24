@@ -161,12 +161,12 @@ export default function TransactionModal({ isOpen, onClose, onSave, initialData 
           </div>
 
           {/* Amount input */}
-          <div className="space-y-1.5 text-center">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <div className="space-y-1.5 text-center py-1">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
               จำนวนเงิน (บาท)
             </label>
-            <div className="relative flex items-center justify-center">
-              <span className="text-2xl font-bold text-zinc-400 mr-1.5">฿</span>
+            <div className="relative inline-flex items-center justify-center">
+              <span className="text-3xl font-extrabold text-zinc-400 mr-1.5">฿</span>
               <input
                 type="number"
                 step="any"
@@ -174,8 +174,7 @@ export default function TransactionModal({ isOpen, onClose, onSave, initialData 
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-48 text-center text-4xl font-extrabold bg-transparent text-zinc-800 dark:text-zinc-100 outline-hidden border-b-2 border-transparent focus:border-zinc-200 dark:focus:border-zinc-800 transition-colors py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                autoFocus
+                className="w-44 text-center text-4xl font-black bg-transparent text-zinc-900 dark:text-white outline-hidden border-b-2 border-zinc-200 dark:border-zinc-800 focus:border-rose-500 dark:focus:border-indigo-500 transition-colors py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>

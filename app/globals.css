@@ -66,7 +66,7 @@ textarea {
 
 /* Prevent iOS Safari from auto-zooming when focusing inputs smaller than 16px */
 @media screen and (max-width: 768px) {
-  input:not([type="checkbox"]):not([type="radio"]):not(.text-3xl):not(.text-2xl),
+  input:not([type="checkbox"]):not([type="radio"]):not(.text-4xl):not(.text-3xl):not(.text-2xl):not(.text-xl):not(.text-lg),
   textarea,
   select {
     font-size: 16px !important;
