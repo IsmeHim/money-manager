@@ -18,6 +18,7 @@ import {
 import ChatSidebar from "@/components/chat/ChatSidebar";
 
 const QUICK_CHIPS = [
+  { label: "⛽ เติมน้ำมันล่าสุดวันไหน", query: "ผมเติมน้ำมันล่าสุดวันไหน" },
   { label: "💰 ยอดเงินคงเหลือ", query: "ยอดเงินคงเหลือตอนนี้มีเท่าไร" },
   { label: "📅 วันนี้ใช้ไปเท่าไร", query: "วันนี้ผมใช้ไปเท่าไร" },
   { label: "⏪ เมื่อวานใช้ไปเท่าไร", query: "เมื่อวานนี้ผมใช้เงินไปเท่าไร" },
