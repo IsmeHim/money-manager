@@ -187,7 +187,7 @@ export async function getDashboardData(view, dateStr) {
 
     const [rawTransactions, accountTransactions] = await Promise.all([
       collection.find(query).sort({ dateStr: -1, createdAt: -1 }).toArray(),
-      collection.find(userScope).project({ type: 1, amount: 1 }).toArray(),
+      collection.find(userScope).sort({ dateStr: -1, timeStr: -1, createdAt: -1 }).toArray(),
     ]);
     const transactions = rawTransactions.map(serializeDoc);
 
@@ -264,6 +264,39 @@ export async function getDashboardData(view, dateStr) {
     });
     const balance = totalIncome - totalExpense;
 
+    // Compute Latest Income Cycle (latest income & all expenses since that income up to now)
+    let latestIncomeCycle = null;
+    const latestIncomeIdx = accountTransactions.findIndex((tx) => tx.type === "income");
+    if (latestIncomeIdx !== -1) {
+      const latestIncomeTx = accountTransactions[latestIncomeIdx];
+      const expensesSinceLatest = accountTransactions
+        .slice(0, latestIncomeIdx)
+        .filter((tx) => tx.type === "expense");
+
+      const incomeAmount = Number(latestIncomeTx.amount) || 0;
+      const spentSince = expensesSinceLatest.reduce(
+        (sum, tx) => sum + (Number(tx.amount) || 0),
+        0
+      );
+      const remainingFromIncome = incomeAmount - spentSince;
+      const spentPercent =
+        incomeAmount > 0 ? Math.round((spentSince / incomeAmount) * 100) : 0;
+
+      latestIncomeCycle = {
+        id: latestIncomeTx._id.toString(),
+        category: latestIncomeTx.category || "รายรับ",
+        description: latestIncomeTx.description || "",
+        amount: incomeAmount,
+        dateStr: latestIncomeTx.dateStr || "",
+        timeStr: latestIncomeTx.timeStr || "",
+        spentSince,
+        remainingFromIncome,
+        spentPercent,
+        expenseCount: expensesSinceLatest.length,
+        recentExpenses: expensesSinceLatest.slice(0, 12).map(serializeDoc),
+      };
+    }
+
     // Convert chart Map to sorted array
     let chartData = [];
     if (view === "monthly") {
@@ -313,6 +346,7 @@ export async function getDashboardData(view, dateStr) {
         totalIncome,
         totalExpense,
         balance,
+        latestIncomeCycle,
       },
       chartData,
       categoryBreakdown: categoryBreakdown.sort((a, b) => b.amount - a.amount),
