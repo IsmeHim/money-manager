@@ -502,6 +502,8 @@ export async function askFinancialBot(userMessage, sessionId = null) {
         userContextText,
         userQuestion: userMessage,
         recentChatHistory,
+        allUserTransactions,
+        allUserDebts,
       });
 
       if (geminiRes.success && geminiRes.response) {
